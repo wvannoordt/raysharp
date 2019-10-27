@@ -10,8 +10,11 @@ namespace raysharp
 	{
 		public static void Main(string[] args)
 		{
-			Stl binary = new Stl("binary.stl");
+			CustomStopWatch s = new CustomStopWatch("initialize");
+			s.tic();
 			Stl ascii = new Stl("ascii.stl");
+			s.toc();
+			s.Report();
 		}
 	}
 }
