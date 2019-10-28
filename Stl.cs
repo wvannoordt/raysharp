@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
 namespace raysharp
@@ -8,7 +9,7 @@ namespace raysharp
 	public class Stl
 	{
 		private const double EPSILON = 1e-15;
-		private bool parallelize = false;
+		private bool parallelize = true;
 
 		private const int XMIN = 0;
 		private const int XMAX = 1;
@@ -38,7 +39,8 @@ namespace raysharp
 		private volatile List<int>[] vertex_adjacencies;
 
 		//Rectangular cover information for each facet, spatial lookup
-		private volatile List<int>[,,] box_covers;
+		private volatile ConcurrentBag<int>[,,] box_covers_threadsafe;
+		private volatile int[,,][] box_covers;
 
 		//Undetermined number of vertices
 		private volatile List<double[]> data_stream;
@@ -94,6 +96,7 @@ namespace raysharp
 				//Has issues.
 				Parallel.For(0, face_count, compute_cover_single);
 				Parallel.For(0, face_count, compute_adjacency_single);
+				Parallel.For(0, x_box_count, optimize_cover_data_sinlge);
 			}
 			else
 			{
@@ -105,10 +108,33 @@ namespace raysharp
 				{
 					compute_adjacency_single(i);
 				}
+				for (int i = 0; i < x_box_count; i++)
+				{
+					optimize_cover_data_sinlge(i);
+				}
+			}
+		}
+		private void optimize_cover_data_sinlge(int cur_idx)
+		{
+			for (int j = 0; j < y_box_count; j++)
+			{
+				for (int k = 0; k < z_box_count; k++)
+				{
+					if (box_covers_threadsafe[cur_idx,j,k] != null)
+					{
+						box_covers[cur_idx, j, k] = box_covers_threadsafe[cur_idx,j,k].ToArray();
+					}
+					else
+					{
+						box_covers[cur_idx, j, k] = new int[0];
+					}
+					box_covers_threadsafe[cur_idx,j,k] = null;
+				}
 			}
 		}
 		private void compute_cover_single(int cur_idx)
 		{
+			//Compute rectangular box covers for each facet (thread independent)
 			int local_xmin_index = (int)Math.Floor((Utils.Min(data[cur_idx,X1], data[cur_idx,X2], data[cur_idx,X3]) - bounds[XMIN])/delta_x);
 			int local_xmax_index = (int)Math.Ceiling((Utils.Max(data[cur_idx,X1], data[cur_idx,X2], data[cur_idx,X3]) - bounds[XMIN])/delta_x);
 
@@ -148,15 +174,15 @@ namespace raysharp
 			facet_index_bounds[cur_idx, ZMAX] = local_zmax_index;
 
 
-
+			// basic implementation for now, can definitely be optimized
 			for (int i = local_xmin_index; i < local_xmax_index; i++)
 			{
 				for (int j = local_ymin_index; j < local_ymax_index; j++)
 				{
 					for (int k = local_zmin_index; k < local_zmax_index; k++)
 					{
-						if (box_covers[i,j,k] == null) box_covers[i,j,k] = new List<int>();
-						box_covers[i,j,k].Add(cur_idx);
+						if (box_covers_threadsafe[i,j,k] == null) box_covers_threadsafe[i,j,k] = new ConcurrentBag<int>();
+						box_covers_threadsafe[i,j,k].Add(cur_idx);
 					}
 				}
 			}
@@ -179,9 +205,9 @@ namespace raysharp
 				{
 					for (int k = kmin; k < kmax; k++)
 					{
-						if (box_covers[i,j,k] != null)
+						if (box_covers_threadsafe[i,j,k] != null)
 						{
-							foreach(int test_idx in box_covers[i,j,k])
+							foreach(int test_idx in box_covers_threadsafe[i,j,k])
 							{
 								if (test_idx != cur_idx)
 								{
@@ -387,7 +413,8 @@ namespace raysharp
 
 				edge_adjacencies = new List<int>[face_count];
 				vertex_adjacencies = new List<int>[face_count];
-				box_covers = new List<int>[x_box_count, y_box_count, z_box_count];
+				box_covers_threadsafe = new ConcurrentBag<int>[x_box_count, y_box_count, z_box_count];
+				box_covers = new int[x_box_count, y_box_count, z_box_count][];
 				facet_index_bounds = new int[face_count, 6];
 			}
 		}
