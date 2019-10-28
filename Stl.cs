@@ -9,7 +9,9 @@ namespace raysharp
 	public class Stl
 	{
 		private const double EPSILON = 1e-15;
-		private bool parallelize = true;
+
+		//Needs testing to determine "break-even" point... might be system-specific.
+		private bool parallelize = false;
 
 		private const int XMIN = 0;
 		private const int XMAX = 1;
@@ -87,13 +89,41 @@ namespace raysharp
 			}
 			array_init();
 			metadata_init();
+
+			//DEBUGGING
+			int min = 10000;
+			int max = 0;
+			List<int> debug = new List<int>();
+			for (int i = 0; i < face_count; i++)
+			{
+				int ct = edge_adjacencies[i].Count;
+				min = ct < min ? ct : min;
+				max = ct > max ? ct : max;
+				if (ct != 3)
+				{
+					debug.Add(i);
+					Console.WriteLine("FACE " + i + ": " + ct + " adj");
+					int imin = facet_index_bounds[i, XMIN];
+					int imax = facet_index_bounds[i, XMAX];
+					int jmin = facet_index_bounds[i, YMIN];
+					int jmax = facet_index_bounds[i, YMAX];
+					int kmin = facet_index_bounds[i, ZMIN];
+					int kmax = facet_index_bounds[i, ZMAX];
+					Console.WriteLine("imin: " + imin + "   imax: " + imax);
+					Console.WriteLine("jmin: " + jmin + "   jmax: " + jmax);
+					Console.WriteLine("kmin: " + kmin + "   kmax: " + kmax);
+				}
+			}
+			Console.WriteLine(min);
+			Console.WriteLine(max);
+			DEBUG_write_ascii_exclude_face(debug.ToArray(), "test.stl");
+			//DEBUGGING
 		}
 		private void metadata_init()
 		{
 			//Compute rectangular cover data
 			if (parallelize)
 			{
-				//Has issues.
 				Parallel.For(0, face_count, compute_cover_single);
 				Parallel.For(0, face_count, compute_adjacency_single);
 				Parallel.For(0, x_box_count, optimize_cover_data_sinlge);
@@ -134,37 +164,19 @@ namespace raysharp
 		}
 		private void compute_cover_single(int cur_idx)
 		{
-			//Compute rectangular box covers for each facet (thread independent)
+			//Compute rectangular box covers for each facet (thread independent). can be optimized a little by computing covers only for edges!
 			int local_xmin_index = (int)Math.Floor((Utils.Min(data[cur_idx,X1], data[cur_idx,X2], data[cur_idx,X3]) - bounds[XMIN])/delta_x);
-			int local_xmax_index = (int)Math.Ceiling((Utils.Max(data[cur_idx,X1], data[cur_idx,X2], data[cur_idx,X3]) - bounds[XMIN])/delta_x);
+			int local_xmax_index = (int)Math.Floor((Utils.Max(data[cur_idx,X1], data[cur_idx,X2], data[cur_idx,X3]) - bounds[XMIN])/delta_x);
 
 			int local_ymin_index = (int)Math.Floor((Utils.Min(data[cur_idx,Y1], data[cur_idx,Y2], data[cur_idx,Y3]) - bounds[YMIN])/delta_y);
-			int local_ymax_index = (int)Math.Ceiling((Utils.Max(data[cur_idx,Y1], data[cur_idx,Y2], data[cur_idx,Y3]) - bounds[YMIN])/delta_y);
+			int local_ymax_index = (int)Math.Floor((Utils.Max(data[cur_idx,Y1], data[cur_idx,Y2], data[cur_idx,Y3]) - bounds[YMIN])/delta_y);
 
 			int local_zmin_index = (int)Math.Floor((Utils.Min(data[cur_idx,Z1], data[cur_idx,Z2], data[cur_idx,Z3]) - bounds[ZMIN])/delta_z);
-			int local_zmax_index = (int)Math.Ceiling((Utils.Max(data[cur_idx,Z1], data[cur_idx,Z2], data[cur_idx,Z3]) - bounds[ZMIN])/delta_z);
+			int local_zmax_index = (int)Math.Floor((Utils.Max(data[cur_idx,Z1], data[cur_idx,Z2], data[cur_idx,Z3]) - bounds[ZMIN])/delta_z);
 
-			if (local_xmin_index == local_xmax_index)
-			{
-				local_xmax_index--;
-				local_xmax_index++;
-				if (local_xmax_index > x_box_count) local_xmax_index = x_box_count;
-				if (local_xmin_index < 0) local_xmin_index = 0;
-			}
-			if (local_ymin_index == local_ymax_index)
-			{
-				local_ymin_index--;
-				local_ymax_index++;
-				if (local_ymax_index > y_box_count) local_ymax_index = y_box_count;
-				if (local_ymin_index < 0) local_ymin_index = 0;
-			}
-			if (local_zmin_index == local_zmax_index)
-			{
-				local_zmin_index--;
-				local_zmax_index++;
-				if (local_zmax_index > z_box_count) local_zmax_index = z_box_count;
-				if (local_zmin_index < 0) local_zmin_index = 0;
-			}
+			if (local_xmax_index >= x_box_count) local_xmax_index = x_box_count - 1;
+			if (local_ymax_index >= y_box_count) local_ymax_index = y_box_count - 1;
+			if (local_zmax_index >= z_box_count) local_zmax_index = z_box_count - 1;
 
 			facet_index_bounds[cur_idx, XMIN] = local_xmin_index;
 			facet_index_bounds[cur_idx, XMAX] = local_xmax_index;
@@ -175,11 +187,11 @@ namespace raysharp
 
 
 			// basic implementation for now, can definitely be optimized
-			for (int i = local_xmin_index; i < local_xmax_index; i++)
+			for (int i = local_xmin_index; i <= local_xmax_index; i++)
 			{
-				for (int j = local_ymin_index; j < local_ymax_index; j++)
+				for (int j = local_ymin_index; j <= local_ymax_index; j++)
 				{
-					for (int k = local_zmin_index; k < local_zmax_index; k++)
+					for (int k = local_zmin_index; k <= local_zmax_index; k++)
 					{
 						if (box_covers_threadsafe[i,j,k] == null) box_covers_threadsafe[i,j,k] = new ConcurrentBag<int>();
 						box_covers_threadsafe[i,j,k].Add(cur_idx);
@@ -198,12 +210,13 @@ namespace raysharp
 			int jmax = facet_index_bounds[cur_idx, YMAX];
 			int kmin = facet_index_bounds[cur_idx, ZMIN];
 			int kmax = facet_index_bounds[cur_idx, ZMAX];
+
 			//Only check over the covers
-			for (int i = imin; i < imax; i++)
+			for (int i = imin; i <= imax; i++)
 			{
-				for (int j = jmin; j < jmax; j++)
+				for (int j = jmin; j <= jmax; j++)
 				{
-					for (int k = kmin; k < kmax; k++)
+					for (int k = kmin; k <= kmax; k++)
 					{
 						if (box_covers_threadsafe[i,j,k] != null)
 						{
@@ -435,6 +448,28 @@ namespace raysharp
 				}
 			}
 			return good_lines < 3;
+		}
+
+		private void DEBUG_write_ascii_exclude_face(int[] faces_to_exclude, string filename)
+		{
+			using (StreamWriter sw = new StreamWriter(filename))
+            {
+                sw.WriteLine("solid Default");
+				for (int i = 0; i < face_count; i++)
+				{
+					if (!Utils.IntArrayContains(faces_to_exclude, i))
+					{
+						sw.WriteLine("  facet normal " + data[i, N1] + " " + data[i, N2] + " " + data[i, N3]);
+						sw.WriteLine("    outer loop");
+						sw.WriteLine("      vertex " + data[i, X1] + " " + data[i, Y1] + " " + data[i, Z1]);
+						sw.WriteLine("      vertex " + data[i, X2] + " " + data[i, Y2] + " " + data[i, Z2]);
+						sw.WriteLine("      vertex " + data[i, X3] + " " + data[i, Y3] + " " + data[i, Z3]);
+						sw.WriteLine("    endloop");
+						sw.WriteLine("  endfacet");
+					}
+				}
+				sw.WriteLine("endsolid Default");
+            }
 		}
 	}
 }
