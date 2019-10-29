@@ -12,7 +12,7 @@ namespace raysharp
 		{
 			CustomStopWatch w = new CustomStopWatch("Load and compute");
 			w.tic();
-			Stl ascii = new Stl("ascii.stl");
+			Stl ascii = new Stl("binary.stl");
 			w.toc();
 			w.Report();
 		}

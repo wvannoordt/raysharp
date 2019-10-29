@@ -9,6 +9,7 @@ namespace raysharp
 	public class Stl
 	{
 		private const double EPSILON = 1e-15;
+		private const double INFLATION_CONST = 1e-3;
 
 		//Needs testing to determine "break-even" point... might be system-specific.
 		private bool parallelize = false;
@@ -86,38 +87,9 @@ namespace raysharp
 			else
 			{
 				ascii_init(filename);
+				array_init();
 			}
-			array_init();
 			metadata_init();
-
-			//DEBUGGING
-			int min = 10000;
-			int max = 0;
-			List<int> debug = new List<int>();
-			for (int i = 0; i < face_count; i++)
-			{
-				int ct = edge_adjacencies[i].Count;
-				min = ct < min ? ct : min;
-				max = ct > max ? ct : max;
-				if (ct != 3)
-				{
-					debug.Add(i);
-					Console.WriteLine("FACE " + i + ": " + ct + " adj");
-					int imin = facet_index_bounds[i, XMIN];
-					int imax = facet_index_bounds[i, XMAX];
-					int jmin = facet_index_bounds[i, YMIN];
-					int jmax = facet_index_bounds[i, YMAX];
-					int kmin = facet_index_bounds[i, ZMIN];
-					int kmax = facet_index_bounds[i, ZMAX];
-					Console.WriteLine("imin: " + imin + "   imax: " + imax);
-					Console.WriteLine("jmin: " + jmin + "   jmax: " + jmax);
-					Console.WriteLine("kmin: " + kmin + "   kmax: " + kmax);
-				}
-			}
-			Console.WriteLine(min);
-			Console.WriteLine(max);
-			DEBUG_write_ascii_exclude_face(debug.ToArray(), "test.stl");
-			//DEBUGGING
 		}
 		private void metadata_init()
 		{
@@ -307,7 +279,87 @@ namespace raysharp
 		private void binary_init(string filename)
 		{
 			//Reads data from file, computes bounding box, computes the length control parameters
-			Info.Kill(this, "binary initialization not implemented.");
+
+			double local_xmin, local_ymin, local_zmin, local_xmax, local_ymax, local_zmax;
+
+			double sum_x_length = 0;
+			double sum_y_length = 0;
+			double sum_z_length = 0;
+
+			//Binary read limited to 4.2 GB
+			int header_offset = 84;
+			byte[] all_bytes = File.ReadAllBytes(filename);
+			face_count = BitConverter.ToInt32(all_bytes, 80);
+			int offset = (all_bytes.Length - 84)/face_count;
+
+			data = new double[face_count, 12];
+
+			int current_real_idx = 0;
+
+			//Parallelize later on?
+			for (int i = header_offset; i < all_bytes.Length; i+=offset)
+			{
+				data[current_real_idx, N1] = (double)System.BitConverter.ToSingle(all_bytes, i);
+				data[current_real_idx, N2] = (double)System.BitConverter.ToSingle(all_bytes, i + 4);
+				data[current_real_idx, N3] = (double)System.BitConverter.ToSingle(all_bytes, i + 8);
+				data[current_real_idx, X1] = (double)System.BitConverter.ToSingle(all_bytes, i + 12);
+				data[current_real_idx, Y1] = (double)System.BitConverter.ToSingle(all_bytes, i + 16);
+				data[current_real_idx, Z1] = (double)System.BitConverter.ToSingle(all_bytes, i + 20);
+				data[current_real_idx, X2] = (double)System.BitConverter.ToSingle(all_bytes, i + 24);
+				data[current_real_idx, Y2] = (double)System.BitConverter.ToSingle(all_bytes, i + 28);
+				data[current_real_idx, Z2] = (double)System.BitConverter.ToSingle(all_bytes, i + 32);
+				data[current_real_idx, X3] = (double)System.BitConverter.ToSingle(all_bytes, i + 36);
+				data[current_real_idx, Y3] = (double)System.BitConverter.ToSingle(all_bytes, i + 40);
+				data[current_real_idx, Z3] = (double)System.BitConverter.ToSingle(all_bytes, i + 44);
+
+				local_xmin = Utils.Min(data[current_real_idx, X1], data[current_real_idx, X2], data[current_real_idx, X3]);
+				local_ymin = Utils.Min(data[current_real_idx, Y1], data[current_real_idx, Y2], data[current_real_idx, Y3]);
+				local_zmin = Utils.Min(data[current_real_idx, Z1], data[current_real_idx, Z2], data[current_real_idx, Z3]);
+
+				local_xmax = Utils.Max(data[current_real_idx, X1], data[current_real_idx, X2], data[current_real_idx, X3]);
+				local_ymax = Utils.Max(data[current_real_idx, Y1], data[current_real_idx, Y2], data[current_real_idx, Y3]);
+				local_zmax = Utils.Max(data[current_real_idx, Z1], data[current_real_idx, Z2], data[current_real_idx, Z3]);
+
+				sum_x_length += local_xmax - local_xmin;
+				sum_y_length += local_ymax - local_ymin;
+				sum_z_length += local_zmax - local_zmin;
+
+				bounds[XMIN] = local_xmin < bounds[XMIN] ? local_xmin : bounds[XMIN];
+				bounds[XMAX] = local_xmax > bounds[XMAX] ? local_xmax : bounds[XMAX];
+				bounds[YMIN] = local_ymin < bounds[YMIN] ? local_ymin : bounds[YMIN];
+				bounds[YMAX] = local_ymax > bounds[YMAX] ? local_ymax : bounds[YMAX];
+				bounds[ZMIN] = local_zmin < bounds[ZMIN] ? local_zmin : bounds[ZMIN];
+				bounds[ZMAX] = local_zmax > bounds[ZMAX] ? local_zmax : bounds[ZMAX];
+				current_real_idx++;
+			}
+			double inflate_x = INFLATION_CONST*(bounds[XMAX] - bounds[XMIN]);
+			double inflate_y = INFLATION_CONST*(bounds[YMAX] - bounds[YMIN]);
+			double inflate_z = INFLATION_CONST*(bounds[ZMAX] - bounds[ZMIN]);
+
+			bounds[XMIN] = bounds[XMIN] - inflate_x;
+			bounds[XMAX] = bounds[XMAX] + inflate_x;
+			bounds[YMIN] = bounds[YMIN] - inflate_y;
+			bounds[YMAX] = bounds[YMAX] + inflate_y;
+			bounds[ZMIN] = bounds[ZMIN] - inflate_z;
+			bounds[ZMAX] = bounds[ZMAX] + inflate_z;
+
+			double avg_delta_x = sum_x_length / face_count;
+			double avg_delta_y = sum_y_length / face_count;
+			double avg_delta_z = sum_z_length / face_count;
+
+			x_box_count = (int)Math.Ceiling((bounds[XMAX] - bounds[XMIN]) / avg_delta_x);
+			y_box_count = (int)Math.Ceiling((bounds[YMAX] - bounds[YMIN]) / avg_delta_y);
+			z_box_count = (int)Math.Ceiling((bounds[ZMAX] - bounds[ZMIN]) / avg_delta_z);
+
+			delta_x = (bounds[XMAX] - bounds[XMIN]) / x_box_count;
+			delta_y = (bounds[YMAX] - bounds[YMIN]) / y_box_count;
+			delta_z = (bounds[ZMAX] - bounds[ZMIN]) / z_box_count;
+
+			edge_adjacencies = new List<int>[face_count];
+			vertex_adjacencies = new List<int>[face_count];
+			box_covers_threadsafe = new ConcurrentBag<int>[x_box_count, y_box_count, z_box_count];
+			box_covers = new int[x_box_count, y_box_count, z_box_count][];
+			facet_index_bounds = new int[face_count, 6];
 		}
 		private void ascii_init(string filename)
 		{
@@ -409,6 +461,17 @@ namespace raysharp
 					line_count++;
 				}
 
+				double inflate_x = INFLATION_CONST*(bounds[XMAX] - bounds[XMIN]);
+				double inflate_y = INFLATION_CONST*(bounds[YMAX] - bounds[YMIN]);
+				double inflate_z = INFLATION_CONST*(bounds[ZMAX] - bounds[ZMIN]);
+
+				bounds[XMIN] = bounds[XMIN] - inflate_x;
+				bounds[XMAX] = bounds[XMAX] + inflate_x;
+				bounds[YMIN] = bounds[YMIN] - inflate_y;
+				bounds[YMAX] = bounds[YMAX] + inflate_y;
+				bounds[ZMIN] = bounds[ZMIN] - inflate_z;
+				bounds[ZMAX] = bounds[ZMAX] + inflate_z;
+
 				face_count = data_stream.Count;
 
 				double avg_delta_x = sum_x_length / face_count;
@@ -448,6 +511,25 @@ namespace raysharp
 				}
 			}
 			return good_lines < 3;
+		}
+
+		private void write_ascii(string filename)
+		{
+			using (StreamWriter sw = new StreamWriter(filename))
+            {
+                sw.WriteLine("solid Default");
+				for (int i = 0; i < face_count; i++)
+				{
+					sw.WriteLine("  facet normal " + data[i, N1] + " " + data[i, N2] + " " + data[i, N3]);
+					sw.WriteLine("    outer loop");
+					sw.WriteLine("      vertex " + data[i, X1] + " " + data[i, Y1] + " " + data[i, Z1]);
+					sw.WriteLine("      vertex " + data[i, X2] + " " + data[i, Y2] + " " + data[i, Z2]);
+					sw.WriteLine("      vertex " + data[i, X3] + " " + data[i, Y3] + " " + data[i, Z3]);
+					sw.WriteLine("    endloop");
+					sw.WriteLine("  endfacet");
+				}
+				sw.WriteLine("endsolid Default");
+            }
 		}
 
 		private void DEBUG_write_ascii_exclude_face(int[] faces_to_exclude, string filename)
