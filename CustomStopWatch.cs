@@ -13,7 +13,7 @@ namespace raysharp
         private DateTime start, end;
         private double elamsped_ms;
 
-        public CustomStopWatch(string _task_name)
+        public CustomStopWatch(string _task_name = "")
         {
             task_name = _task_name;
         }
@@ -21,10 +21,16 @@ namespace raysharp
         {
             start = DateTime.Now;
         }
-        public void toc()
+        public double  toc()
         {
             end = DateTime.Now;
             elamsped_ms = (end - start).TotalMilliseconds;
+            return elamsped_ms;
+        }
+        public void Report(string msg)
+        {
+            Info.Write(msg + ": ", "cyan");
+            Info.WriteLine(elamsped_ms + " ms");
         }
         public void Report()
         {
