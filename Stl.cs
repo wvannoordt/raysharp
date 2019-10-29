@@ -93,7 +93,7 @@ namespace raysharp
 		}
 		private void metadata_init()
 		{
-			//Compute rectangular cover data
+			//Compute rectangular cover data (needs optimization), adjacency
 			if (parallelize)
 			{
 				Parallel.For(0, face_count, compute_cover_single);
@@ -530,6 +530,10 @@ namespace raysharp
 				}
 				sw.WriteLine("endsolid Default");
             }
+		}
+		private void write_binary(string filename)
+		{
+			Info.Kill(this, "binary write not implemented yet.");
 		}
 
 		private void DEBUG_write_ascii_exclude_face(int[] faces_to_exclude, string filename)
