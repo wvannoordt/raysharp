@@ -14,7 +14,6 @@ namespace raysharp
 		private const double INFLATION_CONST = 1e-3;
 
 		//Needs testing to determine "break-even" point... might be system-specific.
-		//Note: there are issues with this so until those are worked out, this is being abandoned.
 		private static bool par_compute_cover = false;
 		private static bool par_compute_adj = false;
 		private static bool par_optimize_cover = true;

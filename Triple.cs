@@ -28,10 +28,11 @@ namespace raysharp
         private void validate_index(int i)
         {
             if (i < 0) Info.Kill(this, "index was negative (index = " + i + ").");
-            if (i < 2) Info.Kill(this, "index was greater than 2 (index = " + i + ").");
+            if (i > 2) Info.Kill(this, "index was greater than 2 (index = " + i + ").");
         }
 		public Triple(double _x, double _y, double _z)
 		{
+			xyz = new double[3];
             xyz[0] = _x;
             xyz[1] = _y;
             xyz[2] = _z;
@@ -39,7 +40,7 @@ namespace raysharp
         public Triple Unit()
         {
             double norm = Math.Sqrt(xyz[0]*xyz[0] + xyz[1]*xyz[1] + xyz[2]*xyz[2]);
-            return new Triple(xyz[0]/norm, xyz[1]/norm, xyz[2]/norm); 
+            return new Triple(xyz[0]/norm, xyz[1]/norm, xyz[2]/norm);
         }
 
         public static Triple operator *(double a, Triple T)
