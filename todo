@@ -1,0 +1,3 @@
+Plane-slicing optimization for cover computation, adjust cover data structure (facet-fist lookup)
+Parallelization scaling / consistency tests
+new binary geometry format for storing facet body metadata
