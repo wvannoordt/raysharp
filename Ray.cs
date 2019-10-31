@@ -45,7 +45,14 @@ namespace raysharp
         }
         public Ray(Triple pos, Triple dir)
         {
-            
+            Triple d_unit = dir.Unit();
+            xyz = new double[6];
+            xyz[0] = pos.X;
+            xyz[1] = pos.Y;
+            xyz[2] = pos.Z;
+            xyz[3] = d_unit.X;
+            xyz[4] = d_unit.Y;
+            xyz[5] = d_unit.Z;
         }
     }
 }

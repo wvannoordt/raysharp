@@ -42,12 +42,15 @@ namespace raysharp
         public void SetPixel(int x, int y, Triple color)
         {
             Color c = Color.FromArgb(255, restrict(color.X), restrict(color.Y), restrict(color.Z));
-            /*Console.Write(restrict(color.X));
-            Console.Write(",");
-            Console.Write(restrict(color.Y));
-            Console.Write(",");
-            Console.WriteLine(restrict(color.Z));*/
             SetPixel(x, y, c);
+        }
+        public void SetPixelXY(int x, int y, Color c)
+        {
+            SetPixel(x, -1 + Height - y, c);
+        }
+        public void SetPixelXY(int x, int y, Triple c)
+        {
+            SetPixel(x, -1 + Height - y, c);
         }
         private int restrict(double a)
         {

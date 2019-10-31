@@ -104,17 +104,6 @@ namespace raysharp
 				array_init();
 			}
 			metadata_init();
-
-			//DEBUGGING
-			for (int i = 0; i < face_count; i++)
-			{
-				if (edge_adjacencies[i].Length != 3)
-				{
-					Console.WriteLine("i=" + i + ", n=" + edge_adjacencies[i].Length);
-					foreach (int p in edge_adjacencies[i]) Console.WriteLine(p);
-				}
-			}
-			//DEBUGGING
 		}
 		private void metadata_init()
 		{
@@ -178,7 +167,6 @@ namespace raysharp
 		private bool is_plane_sliced(int i, int j, int k, int cur_idx)
 		{
 			//can be optimized but not worth it just yet.
-			//return true;
 			bool has_positive = false;
 			bool has_negative = false;
 			for (byte b = 0; b < 8; b++)
@@ -201,37 +189,6 @@ namespace raysharp
 		{
 			edge_adjacencies_threadsafe[cur_idx] = new ConcurrentBag<int>();
 			vertex_adjacencies_threadsafe[cur_idx] = new ConcurrentBag<int>();
-			/*
-			int imin = facet_index_bounds[cur_idx, XMIN];
-			int imax = facet_index_bounds[cur_idx, XMAX];
-			int jmin = facet_index_bounds[cur_idx, YMIN];
-			int jmax = facet_index_bounds[cur_idx, YMAX];
-			int kmin = facet_index_bounds[cur_idx, ZMIN];
-			int kmax = facet_index_bounds[cur_idx, ZMAX];
-
-			//Only check over the covers
-			for (int i = imin; i <= imax; i++)
-			{
-				for (int j = jmin; j <= jmax; j++)
-				{
-					for (int k = kmin; k <= kmax; k++)
-					{
-						if (box_covers_threadsafe[i,j,k] != null)
-						{
-							foreach(int test_idx in box_covers_threadsafe[i,j,k])
-							{
-								if (test_idx != cur_idx)
-								{
-									bool edge_adj, vertex_adj;
-									get_adjacency(cur_idx, test_idx, out edge_adj, out vertex_adj);
-									if (edge_adj) edge_adjacencies_threadsafe[cur_idx].Add(test_idx);
-									if (vertex_adj) vertex_adjacencies_threadsafe[cur_idx].Add(test_idx);
-								}
-							}
-						}
-					}
-				}
-			}*/
 			ConcurrentBag<int[]> currents = box_covers_threadsafe_facetlookup[cur_idx];
 			foreach (int[] indices in currents)
 			{

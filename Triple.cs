@@ -75,5 +75,13 @@ namespace raysharp
         {
             return new Triple(a.Y*b.Z - a.Z*b.Y,a.X*b.Z - a.Z*b.X,a.X*b.Y - a.Y*b.X);
         }
+		public string ToCsvString()
+		{
+			return xyz[0] + "," + xyz[1] + "," + xyz[2];
+		}
+		public override string ToString()
+		{
+			return "{" + xyz[0] + "," + xyz[1] + "," + xyz[2] + "}";
+		}
 	}
 }
