@@ -16,14 +16,12 @@ namespace raysharp
 		//Needs testing to determine "break-even" point... might be system-specific.
 		private static bool par_compute_cover = false;
 		private static bool par_compute_adj = false;
-		private static bool par_optimize_cover = true;
-		private static bool par_optimize_adj = true;
+		private static bool par_opt_adj = false;
 
 		public static bool PAR_COMP_COV {get {return par_compute_cover;} set {par_compute_cover = value;}}
 		public static bool PAR_COMP_ADJ {get {return par_compute_adj;} set {par_compute_adj = value;}}
-		public static bool PAR_OPT_COV {get {return par_optimize_cover;} set {par_optimize_cover = value;}}
-		public static bool PAR_OPT_ADJ {get {return par_optimize_adj;} set {par_optimize_adj = value;}}
-		public static bool PAR_ALL {set {par_compute_cover = value;par_compute_adj = value;par_optimize_cover = value;par_optimize_adj = value;}}
+		public static bool PAR_OPT_ADJ  {get {return par_opt_adj;} set {par_opt_adj = value;}}
+		public static bool PAR_ALL {set {par_compute_cover = value;par_compute_adj = value; par_opt_adj = value;}}
 
 		private const int XMIN = 0;
 		private const int XMAX = 1;
@@ -56,7 +54,9 @@ namespace raysharp
 
 		//Rectangular cover information for each facet, spatial lookup
 		private volatile ConcurrentBag<int>[,,] box_covers_threadsafe;
-		private volatile int[,,][] box_covers;
+
+		//Rectangular cover information for each facet, facet lookup
+		private volatile ConcurrentBag<int[]>[] box_covers_threadsafe_facetlookup;
 
 		//Undetermined number of vertices
 		private volatile List<double[]> data_stream;
@@ -104,6 +104,17 @@ namespace raysharp
 				array_init();
 			}
 			metadata_init();
+
+			//DEBUGGING
+			for (int i = 0; i < face_count; i++)
+			{
+				if (edge_adjacencies[i].Length != 3)
+				{
+					Console.WriteLine("i=" + i + ", n=" + edge_adjacencies[i].Length);
+					foreach (int p in edge_adjacencies[i]) Console.WriteLine(p);
+				}
+			}
+			//DEBUGGING
 		}
 		private void metadata_init()
 		{
@@ -114,36 +125,13 @@ namespace raysharp
 			if(par_compute_adj) Parallel.For(0, face_count, compute_adjacency_single);
 			else {for (int i = 0; i < face_count; i++) compute_adjacency_single(i);}
 
-			if (par_compute_cover) Parallel.For(0, x_box_count, optimize_cover_data_single);
-			else {for (int i = 0; i < x_box_count; i++) optimize_cover_data_single(i);}
-
-			if (par_optimize_adj) Parallel.For(0, face_count, optimize_adj_data_single);
-			else { for (int i = 0; i < face_count; i++)	optimize_adj_data_single(i);}
+			if(par_opt_adj) Parallel.For(0, face_count, opt_adj_data_single);
+			else {for (int i = 0; i < face_count; i++) opt_adj_data_single(i);}
 		}
-		private void optimize_cover_data_single(int cur_idx)
-		{
-			for (int j = 0; j < y_box_count; j++)
-			{
-				for (int k = 0; k < z_box_count; k++)
-				{
-					if (box_covers_threadsafe[cur_idx,j,k] != null)
-					{
-						box_covers[cur_idx, j, k] = box_covers_threadsafe[cur_idx,j,k].ToArray();
-					}
-					else
-					{
-						box_covers[cur_idx, j, k] = new int[0];
-					}
-					box_covers_threadsafe[cur_idx,j,k] = null;
-				}
-			}
-		}
-		private void optimize_adj_data_single(int cur_idx)
+		private void opt_adj_data_single(int cur_idx)
 		{
 			edge_adjacencies[cur_idx] = edge_adjacencies_threadsafe[cur_idx].Distinct().ToArray();
-			edge_adjacencies_threadsafe[cur_idx] = null;
 			vertex_adjacencies[cur_idx] = vertex_adjacencies_threadsafe[cur_idx].Distinct().ToArray();
-			vertex_adjacencies_threadsafe[cur_idx] = null;
 		}
 		private void compute_cover_single(int cur_idx)
 		{
@@ -170,26 +158,50 @@ namespace raysharp
 
 
 			// basic implementation for now, can definitely be optimized
+			box_covers_threadsafe_facetlookup[cur_idx] = new ConcurrentBag<int[]>();
 			for (int i = local_xmin_index; i <= local_xmax_index; i++)
 			{
 				for (int j = local_ymin_index; j <= local_ymax_index; j++)
 				{
 					for (int k = local_zmin_index; k <= local_zmax_index; k++)
 					{
-						bool cover_criterion = true;//WAIT!! If you optimize this, then there needs to be another data structure that is a by-facet lookup of cover data.
+						bool cover_criterion = is_plane_sliced(i,j,k,cur_idx);
 						if (cover_criterion)
 						{
 							box_covers_threadsafe[i,j,k].Add(cur_idx);
+							box_covers_threadsafe_facetlookup[cur_idx].Add(new int[] {i,j,k});
 						}
 					}
 				}
 			}
 		}
+		private bool is_plane_sliced(int i, int j, int k, int cur_idx)
+		{
+			//can be optimized but not worth it just yet.
+			//return true;
+			bool has_positive = false;
+			bool has_negative = false;
+			for (byte b = 0; b < 8; b++)
+			{
+				int di = b & 1;
+				int dj = b>> 1 & 1;
+				int dk = b>> 2 & 1;
+				double x_comp = data[cur_idx, N1]*((bounds[XMIN] + (i + di)*delta_x) - data[cur_idx, X1]);
+				double y_comp = data[cur_idx, N2]*((bounds[YMIN] + (j + dj)*delta_y) - data[cur_idx, Y1]);
+				double z_comp = data[cur_idx, N3]*((bounds[ZMIN] + (k + dk)*delta_z) - data[cur_idx, Z1]);
+				double total = x_comp + y_comp + z_comp;
+				if (total == 0) return true;
+				has_positive = has_positive || (total > 0);
+				has_negative = has_negative || (total < 0);
+				if (has_positive & has_negative) return true;
+			}
+			return false;
+		}
 		private void compute_adjacency_single(int cur_idx)
 		{
 			edge_adjacencies_threadsafe[cur_idx] = new ConcurrentBag<int>();
 			vertex_adjacencies_threadsafe[cur_idx] = new ConcurrentBag<int>();
-
+			/*
 			int imin = facet_index_bounds[cur_idx, XMIN];
 			int imax = facet_index_bounds[cur_idx, XMAX];
 			int jmin = facet_index_bounds[cur_idx, YMIN];
@@ -217,6 +229,21 @@ namespace raysharp
 								}
 							}
 						}
+					}
+				}
+			}*/
+			ConcurrentBag<int[]> currents = box_covers_threadsafe_facetlookup[cur_idx];
+			foreach (int[] indices in currents)
+			{
+				ConcurrentBag<int> test_indices = box_covers_threadsafe[indices[0],indices[1],indices[2]];
+				foreach (int test_idx in test_indices)
+				{
+					if (test_idx != cur_idx)
+					{
+						bool edge_adj, vertex_adj;
+						get_adjacency(cur_idx, test_idx, out edge_adj, out vertex_adj);
+						if (edge_adj) edge_adjacencies_threadsafe[cur_idx].Add(test_idx);
+						if (vertex_adj) vertex_adjacencies_threadsafe[cur_idx].Add(test_idx);
 					}
 				}
 			}
@@ -502,8 +529,8 @@ namespace raysharp
 		{
 			edge_adjacencies_threadsafe = new ConcurrentBag<int>[face_count];
 			vertex_adjacencies_threadsafe = new ConcurrentBag<int>[face_count];
+			box_covers_threadsafe_facetlookup = new ConcurrentBag<int[]>[face_count];
 			box_covers_threadsafe = new ConcurrentBag<int>[x_box_count, y_box_count, z_box_count];
-			box_covers = new int[x_box_count, y_box_count, z_box_count][];
 			facet_index_bounds = new int[face_count, 6];
 			edge_adjacencies = new int[face_count][];
 			vertex_adjacencies = new int[face_count][];
