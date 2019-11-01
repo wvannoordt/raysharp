@@ -1,7 +1,21 @@
-scene-camera-object-bound-transform relationship?
 How do do diffuse lighting?
 
 Parallelization scaling / consistency tests
 new binary geometry format for storing facet body metadata
 point-in-polyhedron optimization for stl body (https://wvannoordt.github.io/misc-math/unitary-cover.pdf), adapt using existing metadata
 self-shadow check: draw tangent plane and check for light sources on the non-normal side?
+
+
+scene-camera-object-bound-transform relationship?
+Some fundamental points about this:
+	A scene should take a ray as an input.
+	Every ray defines a plane, and objects behind that plane cannot be seen.
+	This can be extended to each dimension, not just the plane of the ray. Hence, bounding boxes are good!
+	check as few objects as possible.
+	Ray collision checks have multiple stages: first, the plane check stage (described above), (intermediate stage), then the bounding box (not for sphere, ellipsoid) and
+		last-level checks (which both belong to the object).
+	Ray tracing is recursive. On the most basic level, a ray enters into a function and a color comes out. there should be a limit on the depth (3?)
+	refractions will probably need to compute the transmitting ray AND the exiting ray.
+	Color influence decreases with ray depth (mirrors facing each other, exponential decay)
+	
+Is an interface / inherited class efficient? 
