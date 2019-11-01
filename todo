@@ -19,3 +19,9 @@ Some fundamental points about this:
 	Color influence decreases with ray depth (mirrors facing each other, exponential decay)
 	
 Is an interface / inherited class efficient? 
+
+ANTIALIASING
+	Antialiasing might have to be modularized so that each aspect of a scene performs antialiasing independently. a compute-chader stage could be applied as
+	a global antialiasing. If each render also produces a map of distances to collisions, then shader stages can be applied later for general purposes too.
+	Note also that this map may be generated a priori as an optimization, although some heavy hand calculations need to be carried out and throughly tested
+	before that is possible
