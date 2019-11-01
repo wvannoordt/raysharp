@@ -13,7 +13,7 @@ namespace raysharp
 		private int nx, ny;
         private Triple position;
         private Triple direction, x_axis, y_axis, lower_left;
-        double x_aspect, y_aspect, screen_dist, elevation, zenith, delta_x, delta_y;
+        double x_aspect, y_aspect, screen_dist, elevation, azimuth, delta_x, delta_y;
 		public double XAspect {get {return x_aspect;} set {x_aspect = value;}}
 		public double YAspect {get {return y_aspect;} set {y_aspect = value;}}
 		public double ScreenDist {get {return screen_dist;} set {screen_dist = value;}}
@@ -24,7 +24,7 @@ namespace raysharp
 		public Triple Direction {get {return direction;}}
 		public Triple Position {get {return position;}}
 		public Triple LowerLeft {get {return lower_left;}}
-		public Camera(Triple _position, double _elevation, double _zenith, int _nx, int _ny, double _screen_dist = 1.7)
+		public Camera(Triple _position, double _elevation, double _azimuth, int _nx, int _ny, double _screen_dist = 1.7)
 		{
 			double ratio = (double)_nx / (double)_ny;
 			nx = _nx;
@@ -33,7 +33,7 @@ namespace raysharp
 			y_aspect = 1;
 			screen_dist = _screen_dist;
 			elevation = _elevation;
-			zenith = _zenith;
+			azimuth = _azimuth;
 			position = _position;
 			compute_axes();
 			compute_ll();
@@ -51,11 +51,11 @@ namespace raysharp
 			double sin_ep90 = Math.Sin(elevation + 0.5*Math.PI);
 			double cos_ep90 = Math.Cos(elevation + 0.5*Math.PI);
 
-			double sin_z = Math.Sin(zenith);
-			double cos_z = Math.Cos(zenith);
+			double sin_z = Math.Sin(azimuth);
+			double cos_z = Math.Cos(azimuth);
 
-			double sin_z_m90 = Math.Sin(zenith - Math.PI*0.5);
-			double cos_z_m90 = Math.Cos(zenith - Math.PI*0.5);
+			double sin_z_m90 = Math.Sin(azimuth - Math.PI*0.5);
+			double cos_z_m90 = Math.Cos(azimuth - Math.PI*0.5);
             direction = new Triple(cos_e*cos_z, cos_e*sin_z, sin_e);
             x_axis = new Triple(cos_z_m90, sin_z_m90, 0);
 			y_axis = new Triple(cos_ep90*cos_z, cos_ep90*sin_z, sin_ep90);

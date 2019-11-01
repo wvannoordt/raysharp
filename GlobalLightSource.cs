@@ -9,15 +9,26 @@ namespace raysharp
     public class GlobalLightSource : ILightSource
     {
         private Triple direction, base_color;
-        public Triple Direction {get {return direction;} set {direction = value;}}
+        public Triple Direction {get {return direction;} set {direction = value.Unit();}}
         public Triple BaseColor {get {return base_color;} set {base_color = value;}}
-        public GlobalLightSource()
+        public GlobalLightSource(Triple _direction)
         {
-            
+            init_defaults();
+            direction = _direction.Unit();
+        }
+        public GlobalLightSource(Triple _direction, Triple _base_color)
+        {
+            init_defaults();
+            direction = _direction.Unit();
+        }
+        void init_defaults()
+        {
+            base_color = new Triple(1, 1, 1);
         }
         public double GetPercentLightReception(Ray input)
         {
-            return 0;
+            double dot = -1*input.Direction * direction;
+            return Utils.Max(0, dot*dot*dot);
         }
 
     }

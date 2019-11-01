@@ -18,6 +18,8 @@ namespace raysharp
             RefractiveIndex = 1.3;
             BaseColor = new Triple(0.7, 0.7, 0.7);
             IsReflective = false;
+            IsTransparent = false;
+            AbsorptionCoefficient = 1.0;
         }
 
     }
