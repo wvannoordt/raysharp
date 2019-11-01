@@ -8,55 +8,33 @@ namespace raysharp
 {
     public class Ray
     {
-        private double[] xyz;
-        public double X  {get{return xyz[0];}set{xyz[0] = value;}}
-        public double Y  {get{return xyz[1];}set{xyz[1] = value;}}
-        public double Z  {get{return xyz[2];}set{xyz[2] = value;}}
-        public double V1 {get{return xyz[3];}set{xyz[3] = value;}}
-        public double V2 {get{return xyz[4];}set{xyz[4] = value;}}
-        public double V3 {get{return xyz[5];}set{xyz[5] = value;}}
-        public double this[int i]
-        {
-            get
-            {
-                validate_index(i);
-                return xyz[i];
-            }
-            set
-            {
-                validate_index(i);
-                xyz[i] = value;
-            }
-        }
+        private Triple position, direction;
+        public Triple Position {get {return position;} set{position = value;}}
+        public Triple Direction {get {return direction;} set{direction = value.Unit();}}
+        public double X  {get{return position[0];}set{position[0] = value;}}
+        public double Y  {get{return position[1];}set{position[1] = value;}}
+        public double Z  {get{return position[2];}set{position[2] = value;}}
+        public double V1 {get{return direction[0];}set{direction[0] = value;}}
+        public double V2 {get{return direction[1];}set{direction[1] = value;}}
+        public double V3 {get{return direction[2];}set{direction[2] = value;}}
         public override string ToString()
         {
-            return "{" + xyz[0] + "," + xyz[1] + "," + xyz[2] + "} -> {" + xyz[3] + "," + xyz[4] + "," + xyz[5] + "}";
-        }
-        private void validate_index(int i)
-        {
-            if (i < 0) Info.Kill(this, "index was negative (index = " + i + ").");
-            if (i > 5) Info.Kill(this, "index was greater than 2 (index = " + i + ").");
+            return "{" + position[0] + "," + position[1] + "," + position[2] + "} -> {" + direction[0] + "," + direction[1] + "," + direction[2] + "}";
         }
         public Ray(double _x, double _y, double _z, double _v1, double _v2, double _v3)
         {
-            xyz = new double[6];
-            xyz[0] = _x;
-            xyz[1] = _y;
-            xyz[2] = _z;
-            xyz[3] = _v1;
-            xyz[4] = _v2;
-            xyz[5] = _v3;
+            position[0] = _x;
+            position[1] = _y;
+            position[2] = _z;
+            direction[3] = _v1;
+            direction[4] = _v2;
+            direction[5] = _v3;
         }
         public Ray(Triple pos, Triple dir)
         {
             Triple d_unit = dir.Unit();
-            xyz = new double[6];
-            xyz[0] = pos.X;
-            xyz[1] = pos.Y;
-            xyz[2] = pos.Z;
-            xyz[3] = d_unit.X;
-            xyz[4] = d_unit.Y;
-            xyz[5] = d_unit.Z;
+            position = pos;
+            direction = d_unit;
         }
     }
 }

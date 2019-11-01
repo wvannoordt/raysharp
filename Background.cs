@@ -46,11 +46,17 @@ namespace raysharp
         }
         public Triple GetBackgroundColor(Ray r)
         {
+            Ray nothing;
+            return GetBackgroundColor(r, out nothing);
+        }
+        public Triple GetBackgroundColor(Ray r, out Ray reflected)
+        {
             Triple loc_floor_color = floor_color;
             if (has_floor && r.V3 <= -0.5*HORIZON_THRESH)
             {
                 double scalefactor = -r.Z/r.V3;
-
+                Triple new_direc = new Triple(r.V1, r.V2, -r.V3);
+                reflected = new Ray(r.Position, new_direc);
                 //Intersection point with the floor
                 Triple xy_floor = new Triple(r.X+ scalefactor*r.V1, r.Y+ scalefactor*r.V2, r.Z + scalefactor*r.V3);
                 double h = r.Z - floor_height;
@@ -83,10 +89,19 @@ namespace raysharp
                 bool b = (((int)(xy_floor.Y / floor_checker_length) % 2) == 0) == (xy_floor.Y < 0);
                 if (a == b) loc_floor_color = antialiasing_affected_factor * (horizonfactor*altfloor_color + (1 - horizonfactor)*horizon_color) + (1-antialiasing_affected_factor)*horizon_color;
             }
-            if (r.V3 > HORIZON_THRESH) return sky_color;
-            else if (r.V3 <= -HORIZON_THRESH) return loc_floor_color;
+            if (r.V3 > HORIZON_THRESH)
+            {
+                reflected = null;
+                return sky_color;
+            }
+            else if (r.V3 <= -HORIZON_THRESH)
+            {
+                reflected = null;
+                return loc_floor_color;
+            }
             double t = (r.V3 + HORIZON_THRESH) / (2*HORIZON_THRESH);
             t *= t*t;
+            reflected = null;
             return (1 - t) * horizon_color + t * sky_color;
         }
         private volatile Ray[,] rays;
