@@ -1,4 +1,6 @@
-Plane-slicing optimization for cover computation, adjust cover data structure (facet-fist lookup)
+scene-camera-object-bound-transform relationship?
+How do do diffuse lighting?
+
 Parallelization scaling / consistency tests
 new binary geometry format for storing facet body metadata
 point-in-polyhedron optimization for stl body (https://wvannoordt.github.io/misc-math/unitary-cover.pdf), adapt using existing metadata
