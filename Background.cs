@@ -2,14 +2,17 @@ using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace raysharp
 {
     public class Background
     {
-        private Triple sky_color, floor_color, altfloor_color;
+        private Triple sky_color, floor_color, altfloor_color, horizon_color;
         private double floor_height, floor_checker_length;
-        private const double HORIZON_THRESH = 0.01;
+        private const double HORIZON_THRESH = 0.004;
+        private const double ANTIALIAS_THRESHOLD = 0.2;
+        private const double FLOOR_RES_THRESHOLD = 0.004;
         private bool has_floor;
         public bool HasFloor {get {return has_floor;} set {has_floor = value;}}
         public double FloorCheckerLength {get {return floor_checker_length;} set {floor_checker_length = value;}}
@@ -38,6 +41,8 @@ namespace raysharp
         {
             has_floor = true;
             floor_checker_length = 10;
+            if (has_floor) horizon_color = floor_color;
+            else horizon_color = 0.85*floor_color;
         }
         public Triple GetBackgroundColor(Ray r)
         {
@@ -45,29 +50,74 @@ namespace raysharp
             if (has_floor && r.V3 <= -0.5*HORIZON_THRESH)
             {
                 double scalefactor = -r.Z/r.V3;
+
+                //Intersection point with the floor
                 Triple xy_floor = new Triple(r.X+ scalefactor*r.V1, r.Y+ scalefactor*r.V2, r.Z + scalefactor*r.V3);
+                double h = r.Z - floor_height;
+
+                //Dtermine when to do antialiasing/"fog"
+                double r_floor_1 = Math.Max(Math.Abs(xy_floor.X), Math.Abs(xy_floor.Y));
+                double r_floor_2 = xy_floor.Norm();
+                double r_floor = 0.5*r_floor_1 + 0.5*r_floor_2;
+                double distance = Math.Sqrt(r_floor*r_floor + h*h);
+
+                //"solid angle" of one chekerboard
+                double impression = h*floor_checker_length / distance;
+                if (impression  < ANTIALIAS_THRESHOLD) return horizon_color;
+                //Antialiasing of grid
+                double x_residue = (xy_floor.X%floor_checker_length)/floor_checker_length;
+                if (x_residue < 0) x_residue += 1;
+                double y_residue = (xy_floor.Y%floor_checker_length)/floor_checker_length;
+                if (y_residue < 0) y_residue += 1;
+                double residue = Utils.Min(x_residue, y_residue, 1 - x_residue, 1 - y_residue) / (Math.Sqrt(h));
+                double antialiasing_affected_factor = 1;
+
+                //What a damn mess. Looks nice though
+                if (impression  < 6*ANTIALIAS_THRESHOLD)
+                {
+                    antialiasing_affected_factor =Math.Pow(impression/(6*ANTIALIAS_THRESHOLD), 1.4);
+                }
+                double horizonfactor = 1;
+                if (residue <  FLOOR_RES_THRESHOLD*Utils.Max(1, 1/impression)) horizonfactor = (residue / FLOOR_RES_THRESHOLD);
                 bool a = (((int)(xy_floor.X / floor_checker_length) % 2) == 0) == (xy_floor.X < 0);
-                bool b = (((int)(xy_floor.Y / floor_checker_length) % 2) == 0) == (xy_floor.Y  < 0);
-                if (a == b) loc_floor_color = altfloor_color;
+                bool b = (((int)(xy_floor.Y / floor_checker_length) % 2) == 0) == (xy_floor.Y < 0);
+                if (a == b) loc_floor_color = antialiasing_affected_factor * (horizonfactor*altfloor_color + (1 - horizonfactor)*horizon_color) + (1-antialiasing_affected_factor)*horizon_color;
             }
             if (r.V3 > HORIZON_THRESH) return sky_color;
             else if (r.V3 <= -HORIZON_THRESH) return loc_floor_color;
             double t = (r.V3 + HORIZON_THRESH) / (2*HORIZON_THRESH);
-            t *= t;
-            return (1 - t) * loc_floor_color + t * sky_color;
+            t *= t*t;
+            return (1 - t) * horizon_color + t * sky_color;
         }
-        public  RayImage BasicSerialRender(Camera c, int nx, int ny)
+        private volatile Ray[,] rays;
+        private volatile RayImage im;
+        private int nx, ny;
+        private const bool par_rdr = false;
+        public RayImage BasicRender(Camera c)
         {
-            Ray[,] rays = c.GetRays(nx, ny);
-            RayImage im = new RayImage(nx, ny);
-            for (int i = 0; i < nx; i++)
+            rays = c.GetRays();
+            im = new RayImage(c.NX, c.NY);
+            nx = c.NX;
+            ny = c.NY;
+            if (par_rdr) Parallel.For(0, nx,render_single );
+            else
             {
-                for (int j = 0; j < ny; j++)
+                for (int i = 0; i < c.NX; i++)
                 {
-                    im.SetPixelXY(i,j,GetBackgroundColor(rays[i,j]));
+                    for (int j = 0; j < c.NY; j++)
+                    {
+                        im.SetPixelXY(i,j,GetBackgroundColor(rays[i,j]));
+                    }
                 }
             }
             return im;
+        }
+        private void render_single(int i)
+        {
+            for (int j = 0; j < ny; j++)
+            {
+                im.SetPixelXY(i,j,GetBackgroundColor(rays[i,j]));
+            }
         }
     }
 }

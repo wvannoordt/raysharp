@@ -10,21 +10,27 @@ namespace raysharp
 	public class Camera
 	{
 		private bool par_ray_gen = false;
+		private int nx, ny;
         private Triple position;
         private Triple direction, x_axis, y_axis, lower_left;
         double x_aspect, y_aspect, screen_dist, elevation, zenith, delta_x, delta_y;
 		public double XAspect {get {return x_aspect;} set {x_aspect = value;}}
 		public double YAspect {get {return y_aspect;} set {y_aspect = value;}}
 		public double ScreenDist {get {return screen_dist;} set {screen_dist = value;}}
+		public int NX {get {return nx;}}
+		public int NY {get {return ny;}}
 		public Triple XAxis {get {return x_axis;}}
 		public Triple YAxis {get {return y_axis;}}
 		public Triple Direction {get {return direction;}}
 		public Triple Position {get {return position;}}
 		public Triple LowerLeft {get {return lower_left;}}
-		public Camera(Triple _position, double _elevation, double _zenith, double _x_aspect, double _y_aspect, double _screen_dist)
+		public Camera(Triple _position, double _elevation, double _zenith, int _nx, int _ny, double _screen_dist = 1.7)
 		{
-			x_aspect = _x_aspect;
-			y_aspect = _y_aspect;
+			double ratio = (double)_nx / (double)_ny;
+			nx = _nx;
+			ny = _ny;
+			x_aspect = ratio;
+			y_aspect = 1;
 			screen_dist = _screen_dist;
 			elevation = _elevation;
 			zenith = _zenith;
@@ -56,21 +62,18 @@ namespace raysharp
 		}
 
 		private volatile Ray[,] rays_output;
-		private int NX, NY;
-		public Ray[,] GetRays(int _NX, int _NY)
+		public Ray[,] GetRays()
 		{
-			NX = _NX;
-			NY = _NY;
-			rays_output = new Ray[NX, NY];
-			delta_x = x_aspect / (NX - 1);
-			delta_y = y_aspect / (NY - 1);
-			if (par_ray_gen) Parallel.For(0, NX, make_ray_single);
-			else {for (int ix = 0; ix < NX; ix++) make_ray_single(ix);}
+			rays_output = new Ray[nx, ny];
+			delta_x = x_aspect / (nx - 1);
+			delta_y = y_aspect / (ny - 1);
+			if (par_ray_gen) Parallel.For(0, nx, make_ray_single);
+			else {for (int ix = 0; ix < nx; ix++) make_ray_single(ix);}
 			return rays_output;
 		}
 		private void make_ray_single(int ix)
 		{
-			for (int iy = 0; iy < NY; iy++)
+			for (int iy = 0; iy < ny; iy++)
 			{
 				Triple screen_point = lower_left + (ix*delta_x)*x_axis + (iy*delta_y)*y_axis;
 				Triple vec = (screen_point - position);

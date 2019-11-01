@@ -28,6 +28,10 @@ namespace raysharp
                 xyz[i] = value;
             }
         }
+        public override string ToString()
+        {
+            return "{" + xyz[0] + "," + xyz[1] + "," + xyz[2] + "} -> {" + xyz[3] + "," + xyz[4] + "," + xyz[5] + "}";
+        }
         private void validate_index(int i)
         {
             if (i < 0) Info.Kill(this, "index was negative (index = " + i + ").");

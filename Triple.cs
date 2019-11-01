@@ -39,9 +39,14 @@ namespace raysharp
 		}
         public Triple Unit()
         {
-            double norm = Math.Sqrt(xyz[0]*xyz[0] + xyz[1]*xyz[1] + xyz[2]*xyz[2]);
+            double norm = Norm();
             return new Triple(xyz[0]/norm, xyz[1]/norm, xyz[2]/norm);
         }
+
+		public double Norm()
+		{
+			return Math.Sqrt(xyz[0]*xyz[0] + xyz[1]*xyz[1] + xyz[2]*xyz[2]);
+		}
 
         public static Triple operator *(double a, Triple T)
         {

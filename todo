@@ -5,6 +5,8 @@ new binary geometry format for storing facet body metadata
 point-in-polyhedron optimization for stl body (https://wvannoordt.github.io/misc-math/unitary-cover.pdf), adapt using existing metadata
 self-shadow check: draw tangent plane and check for light sources on the non-normal side?
 
+Render a ball! Use to calibrate lighting
+
 
 scene-camera-object-bound-transform relationship?
 Some fundamental points about this:
@@ -25,3 +27,7 @@ ANTIALIASING
 	a global antialiasing. If each render also produces a map of distances to collisions, then shader stages can be applied later for general purposes too.
 	Note also that this map may be generated a priori as an optimization, although some heavy hand calculations need to be carried out and throughly tested
 	before that is possible
+	
+Parallel.For()
+	This is not a good solution for speeding up rendering. This is akin to the "parfor" directive in matlab, where a compute pool is initialized and similar operations
+	are performed on different datasets. Still searching for a good way to do more low-level parallelization... maybe just write this all in C++
