@@ -29,10 +29,7 @@ namespace raysharp
             optical_properties = new OpticalProperties();
             rotaion_reference = new Triple(0, 0, 1);
         }
-        public Ray TransformToLocalCoords(Ray inbound)
-        {
-            return inbound;
-        }
+        //Need to think carefully about how to  do this.
         public bool CheckIncidence(Ray input, out Ray reflected_ray, out Ray refracted_ray, out double transmission_distance, out Ray[] light_rays)
         {
             reflected_ray= null;

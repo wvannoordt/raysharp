@@ -41,7 +41,7 @@ namespace raysharp
         private void init_hidden_defaults()
         {
             has_floor = true;
-            floor_checker_length = 10;
+            floor_checker_length = 5;
             if (has_floor) horizon_color = floor_color;
             else horizon_color = 0.85*floor_color;
             disable_anti_aliasing = false;
@@ -64,6 +64,7 @@ namespace raysharp
         public Triple GetBackgroundColor(Ray r, out Ray reflected, out double distance_out)
         {
             Triple loc_floor_color = floor_color;
+            double dglob = -1;
             if (has_floor && r.V3 <= -0.5*HORIZON_THRESH)
             {
                 double scalefactor = -r.Z/r.V3;
@@ -78,7 +79,11 @@ namespace raysharp
                 double r_floor_2 = xy_floor.Norm();
                 double r_floor = 0.5*r_floor_1 + 0.5*r_floor_2;
                 double distance = Math.Sqrt(r_floor*r_floor + h*h);
-                distance_out = distance;
+                //Console.WriteLine(h);
+                //Console.WriteLine(r_floor_2);
+                //Console.ReadLine();
+                dglob = Math.Sqrt(r_floor_2*r_floor_2 + h*h);;
+                distance_out = dglob;
                 //"solid angle" of one chekerboard
                 double impression = h*floor_checker_length / distance;
                 if (impression  < ANTIALIAS_THRESHOLD) return horizon_color;
@@ -115,7 +120,7 @@ namespace raysharp
             }
             else if (r.V3 <= -HORIZON_THRESH)
             {
-                distance_out = -1;
+                distance_out = dglob;
                 reflected = null;
                 return loc_floor_color;
             }

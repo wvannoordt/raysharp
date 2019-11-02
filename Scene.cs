@@ -63,13 +63,17 @@ namespace raysharp
         {
             lights.Add(light);
         }
-        Triple TraceRay(Ray r, out int body_id, out double distance)
+        public Triple TraceRay(Ray r, out int body_id, out double distance)
         {
             body_id = -1;
             distance = 0;
             double a;
             Triple backgroundcol = backdrop.GetBackgroundColor(r, out a);
-            return new Triple(0, 0, a / 40);
+            return new Triple (0, 0, a/40);
+        }
+        private Triple trace_ray_recursive(Ray input_ray, int current_depth)
+        {
+            return null;
         }
     }
 }

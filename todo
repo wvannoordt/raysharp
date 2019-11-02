@@ -31,3 +31,7 @@ ANTIALIASING
 Parallel.For()
 	This is not a good solution for speeding up rendering. This is akin to the "parfor" directive in matlab, where a compute pool is initialized and similar operations
 	are performed on different datasets. Still searching for a good way to do more low-level parallelization... maybe just write this all in C++
+	
+Distance computation:
+	This should probably be done in two stages: a rough pass that gets candidates based on overlap between intervals of maximal/minimal distance, then a fine pass that
+	computes the distance exactly.

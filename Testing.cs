@@ -14,14 +14,14 @@ namespace raysharp
 			int ny = 768;
 			int N = 1;
 			double dtheta = 2*Math.PI/N;
-			Triple cube_pos = new Triple (0,0,25);
+			Triple cube_pos = new Triple (0,0,10);
 			Background basic = new Background();
 			basic.HasFloor = true;
 			double radius = 10;
 			double elev = -0.15;
-			double height = 30;
-			Triple pos = new Triple (0,0,0);
-			Camera c = new Camera(pos, elev, 0, nx, ny);
+			double height = 15;
+			Triple pos = new Triple (0,0,height);
+			Camera c = new Camera(pos, elev, 0, nx, ny, 0.9);
 			Cube cu = new Cube(cube_pos, 4);
 
 			Scene main_scene = new Scene(basic, c);
