@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace raysharp
 {
-    interface ILightSource
+    public interface ILightSource
     {
         Triple BaseColor {get; set;}
         double GetPercentLightReception(Ray input);

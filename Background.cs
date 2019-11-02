@@ -9,6 +9,7 @@ namespace raysharp
     public class Background
     {
         private Triple sky_color, floor_color, altfloor_color, horizon_color;
+        private bool disable_anti_aliasing;
         private double floor_height, floor_checker_length;
         private const double HORIZON_THRESH = 0.004;
         private const double ANTIALIAS_THRESHOLD = 0.2;
@@ -43,22 +44,33 @@ namespace raysharp
             floor_checker_length = 10;
             if (has_floor) horizon_color = floor_color;
             else horizon_color = 0.85*floor_color;
+            disable_anti_aliasing = false;
+        }
+        public void SetAntiAliasing(bool input)
+        {
+            disable_anti_aliasing = !input;
         }
         public Triple GetBackgroundColor(Ray r)
         {
             Ray nothing;
-            return GetBackgroundColor(r, out nothing);
+            double also_nothing;
+            return GetBackgroundColor(r, out nothing, out also_nothing);
         }
-        public Triple GetBackgroundColor(Ray r, out Ray reflected)
+        public Triple GetBackgroundColor(Ray r, out double dist)
+        {
+            Ray nothing;
+            return GetBackgroundColor(r, out nothing, out dist);
+        }
+        public Triple GetBackgroundColor(Ray r, out Ray reflected, out double distance_out)
         {
             Triple loc_floor_color = floor_color;
             if (has_floor && r.V3 <= -0.5*HORIZON_THRESH)
             {
                 double scalefactor = -r.Z/r.V3;
                 Triple new_direc = new Triple(r.V1, r.V2, -r.V3);
-                reflected = new Ray(r.Position, new_direc);
                 //Intersection point with the floor
                 Triple xy_floor = new Triple(r.X+ scalefactor*r.V1, r.Y+ scalefactor*r.V2, r.Z + scalefactor*r.V3);
+                reflected = new Ray(r.Position, new_direc);
                 double h = r.Z - floor_height;
 
                 //Dtermine when to do antialiasing/"fog"
@@ -66,7 +78,7 @@ namespace raysharp
                 double r_floor_2 = xy_floor.Norm();
                 double r_floor = 0.5*r_floor_1 + 0.5*r_floor_2;
                 double distance = Math.Sqrt(r_floor*r_floor + h*h);
-
+                distance_out = distance;
                 //"solid angle" of one chekerboard
                 double impression = h*floor_checker_length / distance;
                 if (impression  < ANTIALIAS_THRESHOLD) return horizon_color;
@@ -87,21 +99,30 @@ namespace raysharp
                 if (residue <  FLOOR_RES_THRESHOLD*Utils.Max(1, 1/impression)) horizonfactor = (residue / FLOOR_RES_THRESHOLD);
                 bool a = (((int)(xy_floor.X / floor_checker_length) % 2) == 0) == (xy_floor.X < 0);
                 bool b = (((int)(xy_floor.Y / floor_checker_length) % 2) == 0) == (xy_floor.Y < 0);
+                if (disable_anti_aliasing)
+                {
+                    //lazy
+                    horizonfactor =  1;
+                    antialiasing_affected_factor = 1;
+                }
                 if (a == b) loc_floor_color = antialiasing_affected_factor * (horizonfactor*altfloor_color + (1 - horizonfactor)*horizon_color) + (1-antialiasing_affected_factor)*horizon_color;
             }
             if (r.V3 > HORIZON_THRESH)
             {
                 reflected = null;
+                distance_out = -1;
                 return sky_color;
             }
             else if (r.V3 <= -HORIZON_THRESH)
             {
+                distance_out = -1;
                 reflected = null;
                 return loc_floor_color;
             }
             double t = (r.V3 + HORIZON_THRESH) / (2*HORIZON_THRESH);
             t *= t*t;
             reflected = null;
+            distance_out = -1;
             return (1 - t) * horizon_color + t * sky_color;
         }
         private volatile Ray[,] rays;

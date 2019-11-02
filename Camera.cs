@@ -17,12 +17,14 @@ namespace raysharp
 		public double XAspect {get {return x_aspect;} set {x_aspect = value;}}
 		public double YAspect {get {return y_aspect;} set {y_aspect = value;}}
 		public double ScreenDist {get {return screen_dist;} set {screen_dist = value;}}
+		public double ElevationAngle {get {return elevation;} set {elevation = value; compute_axes();}}
+		public double AzimuthAngle {get {return azimuth;} set {azimuth = value; compute_axes();}}
 		public int NX {get {return nx;}}
 		public int NY {get {return ny;}}
 		public Triple XAxis {get {return x_axis;}}
 		public Triple YAxis {get {return y_axis;}}
 		public Triple Direction {get {return direction;}}
-		public Triple Position {get {return position;}}
+		public Triple Position {get {return position;} set {position = value;}}
 		public Triple LowerLeft {get {return lower_left;}}
 		public Camera(Triple _position, double _elevation, double _azimuth, int _nx, int _ny, double _screen_dist = 1.7)
 		{
