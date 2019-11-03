@@ -12,7 +12,7 @@ namespace raysharp
 		{
 			int nx = 1320;
 			int ny = 768;
-			int N = 15;
+			int N = 10;
 			double dtheta = 2*Math.PI/N;
 			Triple cube_pos = new Triple (0,0,10);
 			Background basic = new Background();
@@ -22,16 +22,26 @@ namespace raysharp
 			double height = 15;
 			Triple pos = new Triple (0,0,height);
 			Camera c = new Camera(pos, elev, 0, nx, ny, 0.9);
-			RectangularPrism cu = new RectangularPrism(cube_pos, 3, 4, 5);
+			RectangularPrism cu1 = new RectangularPrism(cube_pos, 5, 3, 4);
+			RectangularPrism cu2 = new RectangularPrism(cube_pos + new Triple(6, 0, 0), 4, 3, 5);
+			RectangularPrism cu3 = new RectangularPrism(cube_pos + new Triple(0, 6, 0), 3, 5, 4);
+			RectangularPrism cu4 = new RectangularPrism(cube_pos + new Triple(0, 0, 6), 4, 5, 3);
+			cu1.BodyOpticalProperties.BaseColor = new Triple(0.7, 0.2, 0.2);
+			cu2.BodyOpticalProperties.BaseColor = new Triple(0.2, 0.7, 0.2);
+			cu3.BodyOpticalProperties.BaseColor = new Triple(0.2, 0.2, 0.7);
+			cu4.BodyOpticalProperties.BaseColor = new Triple(0.7, 0.2, 0.7);
 
 			Scene main_scene = new Scene(basic, c);
-			main_scene.AddBody(cu);
+			main_scene.AddBody(cu1);
+			main_scene.AddBody(cu2);
+			main_scene.AddBody(cu3);
+			main_scene.AddBody(cu4);
 			CustomStopWatch w = new CustomStopWatch();
 			for (int i = 0; i < N; i++)
 			{
 				double theta = i*dtheta;
 
-				pos = new Triple(-radius*Math.Cos(-theta), radius*Math.Sin(-theta), height);
+				pos = new Triple(-radius*Math.Cos(-theta), radius*Math.Sin(-theta), height + 2*Math.Sin(theta));
 				//pos = new Triple(-radius, 0, height);
 				main_scene.SceneCamera.AzimuthAngle = theta;
 				main_scene.SceneCamera.Position = pos;
@@ -57,9 +67,17 @@ namespace raysharp
 			Triple pos = new Triple (0,0,height);
 			Camera c = new Camera(pos, elev, 0, nx, ny, 0.9);
 			RectangularPrism cu = new RectangularPrism(cube_pos, 4);
+			RectangularPrism cu2 = new RectangularPrism(cube_pos + new Triple(6, 0, 0), 4);
+			RectangularPrism cu3 = new RectangularPrism(cube_pos + new Triple(0, 6, 0), 4);
+			RectangularPrism cu4 = new RectangularPrism(cube_pos + new Triple(0, 0, 6), 4);
+			cu.BodyOpticalProperties.BaseColor  = new Triple(0.7, 0.2, 0.2);
+			cu2.BodyOpticalProperties.BaseColor = new Triple(0.2, 0.7, 0.2);
+			cu3.BodyOpticalProperties.BaseColor = new Triple(0.2, 0.2, 0.7);
+			cu4.BodyOpticalProperties.BaseColor = new Triple(0.7, 0.2, 0.7);
 
 			Scene main_scene = new Scene(basic, c);
 			main_scene.AddBody(cu);
+			main_scene.AddBody(cu2);
 			CustomStopWatch w = new CustomStopWatch();
 			for (int i = 0; i < N; i++)
 			{

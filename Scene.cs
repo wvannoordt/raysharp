@@ -30,7 +30,7 @@ namespace raysharp
         private volatile int[,] bodyid_field;
         private volatile RayImage im;
         private int nx, ny;
-        private const bool par_rdr = true;
+        private const bool par_rdr = false;
         public RayImage Render()
         {
             rays = camera.GetRays();
@@ -54,7 +54,9 @@ namespace raysharp
             for (int j = 0; j < ny; j++)
             {
                 //depth = 1 is a temporary fix!!
-                im.SetPixelXY(i,j,TraceRay(rays[i,j], 1, out bodyid_field[i,j], out distance_field[i,j]));
+                Triple color = TraceRay(rays[i,j], 1, out bodyid_field[i,j], out distance_field[i,j]);
+                //im.SetPixelXY(i,j,color);
+                im.SetPixelXY(i,j,(20/distance_field[i,j])*new Triple(1, 1, 1));
             }
         }
 
@@ -72,7 +74,8 @@ namespace raysharp
             //separate computation for the level 0 pass. The primary pass will also need lighting rays.
             int relevant_body = -1;
             double relevant_first_body_distance = -1;
-            get_relevant_body(r, out relevant_body, out relevant_first_body_distance);
+            Triple first_incident_point;
+            get_relevant_body(r, out relevant_body, out relevant_first_body_distance, out first_incident_point);
             body_id = relevant_body;
             distance = relevant_first_body_distance;
             //trace_ray_recursive(r, 0, 1, NULL_BODY_IDX);
@@ -85,31 +88,11 @@ namespace raysharp
             else
             {
                 //Console.WriteLine(distance);
-                return new Triple(3/distance, 0, 0);
+                return (8/distance) * bodies[relevant_body].BodyOpticalProperties.BaseColor;
             }
 
         }
-        //Will need to return multiple at some point in the case of nesting
-        private void get_relevant_body(Ray input, out int body_id, out double dist)
-        {
-            double min_dist = -1;
-            int candidate_id = BACKGROUND_ID;
-            for (int i = 0; i < bodies.Count; i++)
-            {
-                double cur_dist;
-                if (check_bounding_box_incidence(input, bodies[i], out cur_dist))
-                {
-                    if (cur_dist < min_dist || min_dist < 0)
-                    {
-                        min_dist = cur_dist;
-                        candidate_id = i;
-                    }
-                }
-            }
-            body_id = candidate_id;
-            dist = min_dist;
-        }
-        private Triple trace_ray_recursive(Ray input_ray, int current_depth, int max_depth, int force_body)
+        private Triple trace_ray_recursive(Ray input_ray, int current_depth, int max_depth, int force_body, Triple current_color)
         {
             double a = 0;
             bool incident = false;
@@ -120,6 +103,38 @@ namespace raysharp
             if (incident) return new Triple(0, 1, 0);
             return backdrop.GetBackgroundColor(input_ray, out a);
         }
+
+        private void get_relevant_body(Ray input, out int body_id, out double dist, out Triple point_of_incidence)
+        {
+            double min_dist = -1;
+            double dummy;
+            point_of_incidence = backdrop.GetFloorPoint(input);
+            body_id = BACKGROUND_ID;
+            List<int> candidate_ids = new List<int>();
+            for (int i = 0; i < bodies.Count; i++)
+            {
+                if (check_bounding_box_incidence(input, bodies[i], out dummy))
+                {
+                    candidate_ids.Add(i);
+                }
+            }
+            foreach (int cur_idx in candidate_ids)
+            {
+                double current_dist;
+                Triple current_point_of_incidence;
+                if (bodies[cur_idx].CheckIncidence(input, out current_dist, out current_point_of_incidence))
+                {
+                    if (min_dist < 0 || current_dist < min_dist)
+                    {
+                        point_of_incidence = current_point_of_incidence;
+                        min_dist = current_dist;
+                        body_id = cur_idx;
+                    }
+                }
+            }
+            dist = min_dist;
+        }
+
         private bool check_bounding_box_incidence(Ray r, IRenderableBody b, out double dist_estimate)
         {
             //Quadrant check

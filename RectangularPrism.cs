@@ -43,9 +43,100 @@ namespace raysharp
             optical_properties = new OpticalProperties();
             rotaion_reference = new Triple(0, 0, 1);
         }
-        public bool CheckIncidence(Ray input, out double distance)
+        public bool CheckIncidence(Ray r, out double distance, out Triple point_of_incidence)
         {
-            distance = 0;
+            point_of_incidence = null;
+            bool xmin_possible = Math.Sign(xmin_global - r.X) == Math.Sign(r.V1);
+            bool xmax_possible = Math.Sign(xmax_global - r.X) == Math.Sign(r.V1);
+            bool ymin_possible = Math.Sign(ymin_global - r.Y) == Math.Sign(r.V2);
+            bool ymax_possible = Math.Sign(ymax_global - r.Y) == Math.Sign(r.V2);
+            bool zmin_possible = Math.Sign(zmin_global - r.Z) == Math.Sign(r.V3);
+            bool zmax_possible = Math.Sign(zmax_global - r.Z) == Math.Sign(r.V3);
+            if (!((xmin_possible||xmax_possible) && (ymin_possible||ymax_possible) && (zmin_possible||zmax_possible)))
+            {
+                distance = -1;
+                return false;
+            }
+
+            //Bounding box check
+            double[] dists = new double[]
+            {
+                (xmin_global - r.X)/r.V1, //xmin
+                (xmax_global - r.X)/r.V1, //xmax
+                (ymin_global - r.Y)/r.V2, //ymin
+                (ymax_global - r.Y)/r.V2, //ymax
+                (zmin_global - r.Z)/r.V3, //zmin
+                (zmax_global - r.Z)/r.V3 //zmax
+            };
+
+            bool confirm = false;
+            double cur_min_dist = -1;
+            Triple xmin_position = r.Position + dists[0]*r.Direction;
+            if (xmin_position.Y <= ymax_global && xmin_position.Y > ymin_global && xmin_position.Z <= zmax_global && xmin_position.Z > zmin_global)
+            {
+                if (cur_min_dist < 0 || dists[0] < cur_min_dist)
+                {
+                    confirm = true;
+                    cur_min_dist = dists[0];
+                    point_of_incidence = xmin_position;
+                }
+            }
+            Triple xmax_position = r.Position + dists[1]*r.Direction;
+            if (xmax_position.Y <= ymax_global && xmax_position.Y > ymin_global && xmax_position.Z <= zmax_global && xmax_position.Z > zmin_global)
+            {
+                if (cur_min_dist < 0 || dists[1] < cur_min_dist)
+                {
+                    confirm = true;
+                    cur_min_dist = dists[1];
+                    point_of_incidence = xmax_position;
+                }
+            }
+            Triple ymin_position = r.Position + dists[2]*r.Direction;
+            if (ymin_position.Z <= zmax_global && ymin_position.Z > zmin_global && ymin_position.X <= xmax_global && ymin_position.X > xmin_global)
+            {
+                if (cur_min_dist < 0 || dists[2] < cur_min_dist)
+                {
+                    confirm = true;
+                    cur_min_dist = dists[2];
+                    point_of_incidence = ymin_position;
+                }
+            }
+            Triple ymax_position = r.Position + dists[3]*r.Direction;
+            if (ymax_position.Z <= zmax_global && ymax_position.Z > zmin_global && ymax_position.X <= xmax_global && ymax_position.X > xmin_global)
+            {
+                if (cur_min_dist < 0 || dists[3] < cur_min_dist)
+                {
+                    confirm = true;
+                    cur_min_dist = dists[3];
+                    point_of_incidence = ymax_position;
+                }
+            }
+            Triple zmin_position = r.Position + dists[4]*r.Direction;
+            if (zmin_position.X <= xmax_global && zmin_position.X > xmin_global && zmin_position.Y <= ymax_global && zmin_position.Y > ymin_global)
+            {
+                if (cur_min_dist < 0 || dists[4] < cur_min_dist)
+                {
+                    confirm = true;
+                    cur_min_dist = dists[4];
+                    point_of_incidence = zmin_position;
+                }
+            }
+            Triple zmax_position = r.Position + dists[5]*r.Direction;
+            if (zmax_position.X <= xmax_global && zmax_position.X > xmin_global && zmax_position.Y <= ymax_global && zmax_position.Y > ymin_global)
+            {
+                if (cur_min_dist < 0 || dists[5] < cur_min_dist)
+                {
+                    confirm = true;
+                    cur_min_dist = dists[5];
+                    point_of_incidence = zmax_position;
+                }
+            }
+            if (confirm)
+            {
+                distance = cur_min_dist;
+                return true;
+            }
+            distance = -1;
             return false;
         }
         //Need to think carefully about how to  do this.

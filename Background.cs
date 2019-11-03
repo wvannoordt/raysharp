@@ -10,13 +10,14 @@ namespace raysharp
     {
         private Triple sky_color, floor_color, altfloor_color, horizon_color;
         private bool disable_anti_aliasing;
-        private double floor_height, floor_checker_length;
+        private double floor_height, floor_checker_length, lightness;
         private const double HORIZON_THRESH = 0.004;
         private const double ANTIALIAS_THRESHOLD = 0.2;
         private const double FLOOR_RES_THRESHOLD = 0.004;
         private bool has_floor;
         public bool HasFloor {get {return has_floor;} set {has_floor = value;}}
         public double FloorCheckerLength {get {return floor_checker_length;} set {floor_checker_length = value;}}
+        public double Lightness {get {return lightness;} set {lightness = value;}}
         public Background(Triple _floor_color, Triple _sky_color, double _floor_height)
         {
             sky_color = _sky_color;
@@ -67,10 +68,9 @@ namespace raysharp
             double dglob = -1;
             if (has_floor && r.V3 <= -0.5*HORIZON_THRESH)
             {
-                double scalefactor = -r.Z/r.V3;
                 Triple new_direc = new Triple(r.V1, r.V2, -r.V3);
                 //Intersection point with the floor
-                Triple xy_floor = new Triple(r.X+ scalefactor*r.V1, r.Y+ scalefactor*r.V2, r.Z + scalefactor*r.V3);
+                Triple xy_floor = GetFloorPoint(r);
                 reflected = new Ray(r.Position, new_direc);
                 double h = r.Z - floor_height;
 
@@ -129,6 +129,11 @@ namespace raysharp
             reflected = null;
             distance_out = -1;
             return (1 - t) * horizon_color + t * sky_color;
+        }
+        public Triple GetFloorPoint(Ray r)
+        {
+            double scalefactor = -r.Z/r.V3;
+            return new Triple(r.X+ scalefactor*r.V1, r.Y+ scalefactor*r.V2, r.Z + scalefactor*r.V3);
         }
         private volatile Ray[,] rays;
         private volatile RayImage im;
