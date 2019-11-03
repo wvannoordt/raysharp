@@ -69,7 +69,7 @@ namespace raysharp
         public Triple TraceRay(Ray r, int max_depth, out int body_id, out double distance)
         {
             //The fact that the body id and the distance are returned warrants
-            //separate computation for the level 0 pass.
+            //separate computation for the level 0 pass. The primary pass will also need lighting rays.
             int relevant_body = -1;
             double relevant_first_body_distance = -1;
             get_relevant_body(r, out relevant_body, out relevant_first_body_distance);
