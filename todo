@@ -7,6 +7,13 @@ self-shadow check: draw tangent plane and check for light sources on the non-nor
 
 Render a ball! Use to calibrate lighting
 
+How to do lighting passses through transparent objects?
+
+Metadata for scene object: I think this is where a huge amount of performance can be gained back.
+
+Computing relevant bodies  should actually save some relevant metadata that can be used to revisit the computation later, I.e. what is the collision plane, what is the 
+index of the collision face, etc.
+
 
 scene-camera-object-bound-transform relationship?
 Some fundamental points about this:

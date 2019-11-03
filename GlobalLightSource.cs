@@ -9,6 +9,8 @@ namespace raysharp
     public class GlobalLightSource : ILightSource
     {
         private Triple direction, base_color;
+        private double intensity;
+        public double Intensity {get {return intensity;} set {intensity = value;}}
         public Triple Direction {get {return direction;} set {direction = value.Unit();}}
         public Triple BaseColor {get {return base_color;} set {base_color = value;}}
         public GlobalLightSource(Triple _direction)

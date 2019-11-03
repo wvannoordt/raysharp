@@ -22,6 +22,38 @@ namespace raysharp
             }
             return output;
         }
+        public static double Min(out int idx, params double[] xs)
+        {
+            double output = double.PositiveInfinity;
+            int candidate = 0;
+            idx = 0;
+            foreach (double x in xs)
+            {
+                if (x < output)
+                {
+                    output = x;
+                    idx = candidate;
+                }
+                candidate++;
+            }
+            return output;
+        }
+        public static double MinPos(out int idx, params double[] xs)
+        {
+            double output = double.PositiveInfinity;
+            int candidate = 0;
+            idx = 0;
+            foreach (double x in xs)
+            {
+                if (x < output && x >= 0)
+                {
+                    output = x;
+                    idx = candidate;
+                }
+                candidate++;
+            }
+            return output;
+        }
         public static double Max(params double[] xs)
         {
             double output = double.NegativeInfinity;

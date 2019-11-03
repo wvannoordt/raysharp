@@ -9,6 +9,7 @@ namespace raysharp
     public interface ILightSource
     {
         Triple BaseColor {get; set;}
+        double Intensity {get; set;}
         double GetPercentLightReception(Ray input);
     }
 }

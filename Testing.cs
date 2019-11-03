@@ -12,7 +12,41 @@ namespace raysharp
 		{
 			int nx = 1320;
 			int ny = 768;
-			int N = 1;
+			int N = 15;
+			double dtheta = 2*Math.PI/N;
+			Triple cube_pos = new Triple (0,0,10);
+			Background basic = new Background();
+			basic.HasFloor = true;
+			double radius = 25;
+			double elev = -0.15;
+			double height = 15;
+			Triple pos = new Triple (0,0,height);
+			Camera c = new Camera(pos, elev, 0, nx, ny, 0.9);
+			RectangularPrism cu = new RectangularPrism(cube_pos, 3, 4, 5);
+
+			Scene main_scene = new Scene(basic, c);
+			main_scene.AddBody(cu);
+			CustomStopWatch w = new CustomStopWatch();
+			for (int i = 0; i < N; i++)
+			{
+				double theta = i*dtheta;
+
+				pos = new Triple(-radius*Math.Cos(-theta), radius*Math.Sin(-theta), height);
+				//pos = new Triple(-radius, 0, height);
+				main_scene.SceneCamera.AzimuthAngle = theta;
+				main_scene.SceneCamera.Position = pos;
+				w.tic();
+				RayImage r = main_scene.Render();
+				w.toc();
+				w.Report("render " + i.ToString());
+				r.Save("frames/img" + i.ToString().PadLeft(3, '0') + ".png");
+			}
+		}
+		public static void RenderCube()
+		{
+			int nx = 1320;
+			int ny = 768;
+			int N = 10;
 			double dtheta = 2*Math.PI/N;
 			Triple cube_pos = new Triple (0,0,10);
 			Background basic = new Background();
@@ -22,22 +56,23 @@ namespace raysharp
 			double height = 15;
 			Triple pos = new Triple (0,0,height);
 			Camera c = new Camera(pos, elev, 0, nx, ny, 0.9);
-			Cube cu = new Cube(cube_pos, 4);
+			RectangularPrism cu = new RectangularPrism(cube_pos, 4);
 
 			Scene main_scene = new Scene(basic, c);
 			main_scene.AddBody(cu);
-
+			CustomStopWatch w = new CustomStopWatch();
 			for (int i = 0; i < N; i++)
 			{
-				Console.WriteLine(i);
 				double theta = i*dtheta;
 
-				pos = new Triple(-radius*Math.Cos(theta), radius*Math.Sin(theta), height);
+				//pos = new Triple(-radius*Math.Cos(theta), radius*Math.Sin(theta), height);
+				pos = new Triple(-radius, 0, height);
 				main_scene.SceneCamera.AzimuthAngle = theta;
 				main_scene.SceneCamera.Position = pos;
-
+				w.tic();
 				RayImage r = main_scene.Render();
-
+				w.toc();
+				w.Report("render " + i.ToString());
 				r.Save("frames/img" + i.ToString().PadLeft(3, '0') + ".png");
 			}
 		}
@@ -64,7 +99,7 @@ namespace raysharp
 			//Confirms that 1.7 is a good number.
 			int nx = 1320;
 			int ny = 768;
-			int N = 40;
+			int N = 15;
 			for (int i = 0; i < N; i++)
 			{
 				double theta = 0;
