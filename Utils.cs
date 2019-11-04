@@ -1,10 +1,20 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 
 namespace raysharp
 {
     public static class Utils
     {
+        public static void WriteCsv(string filename, double[] contents)
+        {
+            List<string> lines = new List<string>();
+            foreach(double g in contents)
+            {
+                lines.Add(g.ToString());
+            }
+            File.WriteAllLines(filename, lines.ToArray());
+        }
         public static bool IntArrayContains(int[] stuff, int i)
         {
             for (int k = 0; k < stuff.Length; k++)

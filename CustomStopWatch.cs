@@ -21,7 +21,7 @@ namespace raysharp
         {
             start = DateTime.Now;
         }
-        public double  toc()
+        public double toc()
         {
             end = DateTime.Now;
             elamsped_ms = (end - start).TotalMilliseconds;

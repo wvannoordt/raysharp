@@ -8,7 +8,7 @@ namespace raysharp
 {
 	public static class Testing
 	{
-		public static void OrbitCube()
+		public static double[] OrbitCube()
 		{
 			int nx = 1320;
 			int ny = 768;
@@ -20,6 +20,8 @@ namespace raysharp
 			double radius = 25;
 			double elev = -0.15;
 			double height = 15;
+
+			List<double> times = new List<double>();
 
 			GlobalLightSource light = new GlobalLightSource(new Triple(1, 2, -4));
 
@@ -70,10 +72,11 @@ namespace raysharp
 				main_scene.SceneCamera.Position = pos;
 				w.tic();
 				RayImage r = main_scene.Render();
-				w.toc();
+				times.Add(w.toc());
 				w.Report("render " + i.ToString());
 				r.Save("frames/img" + i.ToString().PadLeft(3, '0') + ".png");
 			}
+			return times.ToArray();
 		}
 		public static void RenderCube()
 		{
