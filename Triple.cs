@@ -30,6 +30,10 @@ namespace raysharp
             if (i < 0) Info.Kill(this, "index was negative (index = " + i + ").");
             if (i > 2) Info.Kill(this, "index was greater than 2 (index = " + i + ").");
         }
+		public Triple clone()
+		{
+			return new Triple(xyz[0], xyz[1], xyz[2]);
+		}
 		public Triple(double _x, double _y, double _z)
 		{
 			xyz = new double[3];

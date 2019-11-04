@@ -30,7 +30,7 @@ namespace raysharp
         private volatile int[,] bodyid_field;
         private volatile RayImage im;
         private int nx, ny;
-        private const bool par_rdr = false;
+        private const bool par_rdr = true;
         public RayImage Render()
         {
             rays = camera.GetRays();
@@ -55,8 +55,7 @@ namespace raysharp
             {
                 //depth = 1 is a temporary fix!!
                 Triple color = TraceRay(rays[i,j], 1, out bodyid_field[i,j], out distance_field[i,j]);
-                //im.SetPixelXY(i,j,color);
-                im.SetPixelXY(i,j,(20/distance_field[i,j])*new Triple(1, 1, 1));
+                im.SetPixelXY(i,j,color);
             }
         }
 
@@ -88,9 +87,27 @@ namespace raysharp
             else
             {
                 //Console.WriteLine(distance);
-                return (8/distance) * bodies[relevant_body].BodyOpticalProperties.BaseColor;
+                Triple color = bodies[relevant_body].BodyOpticalProperties.BaseColor.clone();
+                //adjust_for_lighting()
+                //adjust_for_lighting(new Ray)
+                return color;
             }
 
+        }
+        private void adjust_for_diffuse_lighting(Ray input, ref Triple color, double body_reflection_parameter)
+        {
+            foreach (ILightSource light_source in lights)
+            {
+                int bid;
+                double dist_null;
+                Triple point_null;
+                get_relevant_body(input, out bid, out dist_null, out point_null);
+                if (bid == BACKGROUND_ID)
+                {
+                    double t = body_reflection_parameter*light_source.GetPercentLightReception(input);
+                    color = t * color + (1 - t)*light_source.BaseColor;
+                }
+            }
         }
         private Triple trace_ray_recursive(Ray input_ray, int current_depth, int max_depth, int force_body, Triple current_color)
         {
