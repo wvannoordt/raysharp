@@ -9,7 +9,7 @@ namespace raysharp
     public interface IRenderableBody
     {
         OpticalProperties BodyOpticalProperties {get; set;}
-        bool CheckIncidence(Ray input, out double distance, out Triple point_of_incidence);
+        bool CheckIncidence(Ray input, out double distance, out Triple point_of_incidence, out Triple normal_vector);
         void ComputeFullIncidence(Ray input, out Ray reflected_ray, out Ray refracted_ray, out double transmission_distance, out Ray[] light_rays);
         bool CheckContainsPoint(Triple point);
         //Note: anchor represents (0,0,0) in the coordinate system local to the body.

@@ -20,6 +20,9 @@ namespace raysharp
 			double radius = 25;
 			double elev = -0.15;
 			double height = 15;
+
+			GlobalLightSource light = new GlobalLightSource(new Triple(1, 2, -4));
+
 			Triple pos = new Triple (0,0,height);
 			Camera c = new Camera(pos, elev, 0, nx, ny, 0.9);
 			RectangularPrism cu1 = new RectangularPrism(cube_pos, 5, 3, 4);
@@ -30,6 +33,9 @@ namespace raysharp
 			RectangularPrism cu6 = new RectangularPrism(cube_pos + new Triple(6, 6, 6), 4, 5, 4);
 			RectangularPrism cu7 = new RectangularPrism(cube_pos + new Triple(6, 6, 0), 3, 3, 5);
 			RectangularPrism cu8 = new RectangularPrism(cube_pos + new Triple(6, 0, 6), 3, 3, 3);
+
+			RectangularPrism floor = new RectangularPrism(new Triple(0, 0, 2), 40, 40, 0.3);
+
 			cu1.BodyOpticalProperties.BaseColor = new Triple(0.7, 0.2, 0.2);
 			cu2.BodyOpticalProperties.BaseColor = new Triple(0.2, 0.7, 0.2);
 			cu3.BodyOpticalProperties.BaseColor = new Triple(0.2, 0.2, 0.7);
@@ -38,6 +44,7 @@ namespace raysharp
 			cu6.BodyOpticalProperties.BaseColor = new Triple(0.2, 0.7, 0.7);
 			cu7.BodyOpticalProperties.BaseColor = new Triple(0.7, 0.7, 0.2);
 			cu8.BodyOpticalProperties.BaseColor = new Triple(0.67, 0.2, 0.4);
+			floor.BodyOpticalProperties.BaseColor = new Triple(0.67, 0.67, 0.67);
 
 			Scene main_scene = new Scene(basic, c);
 			main_scene.AddBody(cu1);
@@ -48,6 +55,9 @@ namespace raysharp
 			main_scene.AddBody(cu6);
 			main_scene.AddBody(cu7);
 			main_scene.AddBody(cu8);
+			main_scene.AddBody(floor);
+
+			main_scene.AddLight(light);
 			CustomStopWatch w = new CustomStopWatch();
 			for (int i = 0; i < N; i++)
 			{

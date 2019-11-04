@@ -8,6 +8,7 @@ namespace raysharp
 {
     public class RectangularPrism : IRenderableBody
     {
+        private const double NORMAL_EPSILON = 1e-6;
         private OpticalProperties optical_properties;
         public OpticalProperties BodyOpticalProperties {get {return optical_properties;} set{optical_properties = value;}}
         private Triple anchor, rotaion_reference;
@@ -43,9 +44,10 @@ namespace raysharp
             optical_properties = new OpticalProperties();
             rotaion_reference = new Triple(0, 0, 1);
         }
-        public bool CheckIncidence(Ray r, out double distance, out Triple point_of_incidence)
+        public bool CheckIncidence(Ray r, out double distance, out Triple point_of_incidence, out Triple normal_vector)
         {
             point_of_incidence = null;
+            normal_vector = null;
             bool xmin_possible = Math.Sign(xmin_global - r.X) == Math.Sign(r.V1);
             bool xmax_possible = Math.Sign(xmax_global - r.X) == Math.Sign(r.V1);
             bool ymin_possible = Math.Sign(ymin_global - r.Y) == Math.Sign(r.V2);
@@ -79,6 +81,7 @@ namespace raysharp
                     confirm = true;
                     cur_min_dist = dists[0];
                     point_of_incidence = xmin_position;
+                    normal_vector = new Triple(-1, 0, 0);
                 }
             }
             Triple xmax_position = r.Position + dists[1]*r.Direction;
@@ -89,6 +92,7 @@ namespace raysharp
                     confirm = true;
                     cur_min_dist = dists[1];
                     point_of_incidence = xmax_position;
+                    normal_vector = new Triple(1, 0, 0);
                 }
             }
             Triple ymin_position = r.Position + dists[2]*r.Direction;
@@ -99,6 +103,7 @@ namespace raysharp
                     confirm = true;
                     cur_min_dist = dists[2];
                     point_of_incidence = ymin_position;
+                    normal_vector = new Triple(0, -1, 0);
                 }
             }
             Triple ymax_position = r.Position + dists[3]*r.Direction;
@@ -109,6 +114,7 @@ namespace raysharp
                     confirm = true;
                     cur_min_dist = dists[3];
                     point_of_incidence = ymax_position;
+                    normal_vector = new Triple(0, 1, 0);
                 }
             }
             Triple zmin_position = r.Position + dists[4]*r.Direction;
@@ -119,6 +125,7 @@ namespace raysharp
                     confirm = true;
                     cur_min_dist = dists[4];
                     point_of_incidence = zmin_position;
+                    normal_vector = new Triple(0, 0, -1);
                 }
             }
             Triple zmax_position = r.Position + dists[5]*r.Direction;
@@ -129,6 +136,7 @@ namespace raysharp
                     confirm = true;
                     cur_min_dist = dists[5];
                     point_of_incidence = zmax_position;
+                    normal_vector = new Triple(0, 0, 1);
                 }
             }
             if (confirm)

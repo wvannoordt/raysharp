@@ -74,7 +74,8 @@ namespace raysharp
             int relevant_body = -1;
             double relevant_first_body_distance = -1;
             Triple first_incident_point;
-            get_relevant_body(r, out relevant_body, out relevant_first_body_distance, out first_incident_point);
+            Triple normal_vector;
+            get_relevant_body(r, out relevant_body, out relevant_first_body_distance, out first_incident_point, out normal_vector);
             body_id = relevant_body;
             distance = relevant_first_body_distance;
             //trace_ray_recursive(r, 0, 1, NULL_BODY_IDX);
@@ -88,23 +89,26 @@ namespace raysharp
             {
                 //Console.WriteLine(distance);
                 Triple color = bodies[relevant_body].BodyOpticalProperties.BaseColor.clone();
+                adjust_for_diffuse_lighting(first_incident_point + (1e-6)*normal_vector, ref color, 0.5);
                 //adjust_for_lighting()
                 //adjust_for_lighting(new Ray)
                 return color*(10/distance);
             }
 
         }
-        private void adjust_for_diffuse_lighting(Ray input, ref Triple color, double body_reflection_parameter)
+        private void adjust_for_diffuse_lighting(Triple input, ref Triple color, double body_reflection_parameter)
         {
             foreach (ILightSource light_source in lights)
             {
                 int bid;
                 double dist_null;
                 Triple point_null;
-                get_relevant_body(input, out bid, out dist_null, out point_null);
+                Triple normal_vector;
+                Ray pointing_ray = light_source.ComputeDiffuseLightingRay(input);
+                get_relevant_body(pointing_ray, out bid, out dist_null, out point_null, out normal_vector);
                 if (bid == BACKGROUND_ID)
                 {
-                    double t = body_reflection_parameter*light_source.GetPercentLightReception(input);
+                    double t = body_reflection_parameter*light_source.GetPercentLightReception(pointing_ray);
                     color = t * color + (1 - t)*light_source.BaseColor;
                 }
             }
@@ -121,10 +125,11 @@ namespace raysharp
             return backdrop.GetBackgroundColor(input_ray, out a);
         }
 
-        private void get_relevant_body(Ray input, out int body_id, out double dist, out Triple point_of_incidence)
+        private void get_relevant_body(Ray input, out int body_id, out double dist, out Triple point_of_incidence, out Triple normal_vector_out)
         {
             double min_dist = -1;
             double dummy;
+            normal_vector_out = null;
             point_of_incidence = backdrop.GetFloorPoint(input);
             body_id = BACKGROUND_ID;
             List<int> candidate_ids = new List<int>();
@@ -139,13 +144,15 @@ namespace raysharp
             {
                 double current_dist;
                 Triple current_point_of_incidence;
-                if (bodies[cur_idx].CheckIncidence(input, out current_dist, out current_point_of_incidence))
+                Triple normal_vector;
+                if (bodies[cur_idx].CheckIncidence(input, out current_dist, out current_point_of_incidence, out normal_vector))
                 {
                     if (min_dist < 0 || current_dist < min_dist)
                     {
                         point_of_incidence = current_point_of_incidence;
                         min_dist = current_dist;
                         body_id = cur_idx;
+                        normal_vector_out = normal_vector;
                     }
                 }
             }

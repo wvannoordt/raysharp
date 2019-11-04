@@ -21,6 +21,20 @@ both cases (I think) and this is the approach that will be taken for now, but te
 needs to happen. Think about point light sources (light bulbs etc) interacting through
 transparent media or between two objects... This will need a lot of thought.
 
+Diffuse lighting also needs to be thought about to some extent. Simply drawing a ray to 
+light sources will give uniform coloration of any surface facing a light. Maybe take dot
+of the normal vector as a scaling factor? this would give uniform coloration on each face,
+and then some small but finite reflectivity may make up for the rest... It might
+also be worth adding some diffusivity parameter. 
+
+Also, there are currently three issues happening:
+	1: As each frame is rendered, render time increases.
+	2: Sometimes, a frame will spontaneously take 5x longer to render. This may
+		be related to the quadrant check, so some on-the-fly spatial computations might 		optimize that. Need to be careful about this one though.
+	3: Memory usage is terrible. A simple render of 9 rectangular prisms used 1.2G of RAM.
+		There is probably a "memory leak" (i.e., some optimization to be done) that
+		causes accumulation of resources. This is absolutely worth optimizing.
+
 Preliminary trace:
 	get base color
 	diffuse lighting viewing surface (gives the "solar" effect?)
