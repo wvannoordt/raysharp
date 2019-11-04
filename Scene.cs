@@ -90,7 +90,7 @@ namespace raysharp
                 Triple color = bodies[relevant_body].BodyOpticalProperties.BaseColor.clone();
                 //adjust_for_lighting()
                 //adjust_for_lighting(new Ray)
-                return color;
+                return color*(10/distance);
             }
 
         }

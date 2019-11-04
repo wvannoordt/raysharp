@@ -12,7 +12,7 @@ namespace raysharp
 		{
 			int nx = 1320;
 			int ny = 768;
-			int N = 10;
+			int N = 150;
 			double dtheta = 2*Math.PI/N;
 			Triple cube_pos = new Triple (0,0,10);
 			Background basic = new Background();
@@ -53,9 +53,10 @@ namespace raysharp
 			{
 				double theta = i*dtheta;
 
-				pos = new Triple(-radius*Math.Cos(-theta), radius*Math.Sin(-theta), height + 2*Math.Sin(theta));
+				pos = new Triple(-radius*Math.Cos(-theta), radius*Math.Sin(-theta), height + 5*Math.Sin(theta));
 				//pos = new Triple(-radius, 0, height);
 				main_scene.SceneCamera.AzimuthAngle = theta;
+				main_scene.SceneCamera.ElevationAngle = -0.19740*Math.Sin(theta);
 				main_scene.SceneCamera.Position = pos;
 				w.tic();
 				RayImage r = main_scene.Render();

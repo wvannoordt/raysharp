@@ -32,6 +32,10 @@ namespace raysharp
             double dot = -1*input.Direction * direction;
             return Utils.Max(0, dot*dot*dot);
         }
+        public Ray ComputeDiffuseLightingRay(Triple relevant_point)
+        {
+            return new Ray(relevant_point, -1*direction);
+        }
 
     }
 }

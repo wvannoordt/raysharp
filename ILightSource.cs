@@ -11,5 +11,6 @@ namespace raysharp
         Triple BaseColor {get; set;}
         double Intensity {get; set;}
         double GetPercentLightReception(Ray input);
+        Ray ComputeDiffuseLightingRay(Triple relevant_point);
     }
 }
