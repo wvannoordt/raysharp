@@ -27,6 +27,13 @@ of the normal vector as a scaling factor? this would give uniform coloration on 
 and then some small but finite reflectivity may make up for the rest... It might
 also be worth adding some diffusivity parameter. 
 
+It seems as though diffuse lighting is actually made up of three components: one component from a direct incidence trace, one from a normal trace, and one from a reflected (not specular!) trace.
+Adding these three components MIGHT give an effect that approximates diffusifity, but who knows?
+
+This brings up another point, the body-incidence check MUST be as efficient as possible since it is invoked so many times. It might be worth gridding every body in the scene that satisfies the 
+quadrant check (this will probably need to be its own function now) and sorting in O(nlogn) by different sphereical axes. this would offer a very fast way (binary search) to check for incidence
+using a quadrature on the sphere, without taking up too much extra memory. It will probably be a pain to implement but worth it in the long run.
+
 Also, there are currently three issues happening:
 	1: As each frame is rendered, render time increases.
 	2: Sometimes, a frame will spontaneously take 5x longer to render. This may
