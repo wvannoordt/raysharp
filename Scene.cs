@@ -89,27 +89,36 @@ namespace raysharp
             {
                 //Console.WriteLine(distance);
                 Triple color = bodies[relevant_body].BodyOpticalProperties.BaseColor.clone();
-                adjust_for_diffuse_lighting(first_incident_point + (1e-6)*normal_vector, ref color, 0.5);
+
+                //Transform the input ray as to not take up extra memory.
+                r.Position = first_incident_point;
+                r.Direction = r.Direction - 2*(r.Direction*normal_vector)*normal_vector;//HERERERERE
+                adjust_for_diffuse_lighting(first_incident_point, normal_vector, r, ref color, 0.4);
                 //adjust_for_lighting()
                 //adjust_for_lighting(new Ray)
-                return color*(10/distance);
+                return color;
             }
 
         }
-        private void adjust_for_diffuse_lighting(Triple input, ref Triple color, double body_reflection_parameter)
+        private void adjust_for_diffuse_lighting(Triple collision_point, Triple normal_vector_in, Ray reflected_ray, ref Triple color, double body_reflection_parameter)
         {
             foreach (ILightSource light_source in lights)
             {
                 int bid;
                 double dist_null;
                 Triple point_null;
-                Triple normal_vector;
-                Ray pointing_ray = light_source.ComputeDiffuseLightingRay(input);
-                get_relevant_body(pointing_ray, out bid, out dist_null, out point_null, out normal_vector);
+                Triple normal_vector_null;
+                //Need the small normal correction otherwise machine error gives spottiness.
+                Ray pointing_ray = light_source.ComputeDiffuseLightingRay(collision_point + (1e-6)*normal_vector_in);
+                get_relevant_body(pointing_ray, out bid, out dist_null, out point_null, out normal_vector_null);
                 if (bid == BACKGROUND_ID)
                 {
                     double t = body_reflection_parameter*light_source.GetPercentLightReception(pointing_ray);
-                    color = t * color + (1 - t)*light_source.BaseColor;
+                    color = (1-t) * color + t*light_source.BaseColor;
+                    double t2 = body_reflection_parameter*light_source.GetPercentLightReception(reflected_ray);
+                    color = (1-t2) * color + t2*light_source.BaseColor;
+                    double t3 = body_reflection_parameter*light_source.GetPercentLightReception(new Ray(collision_point, normal_vector_in));
+                    color = (1-t3) * color + t3*light_source.BaseColor;
                 }
             }
         }

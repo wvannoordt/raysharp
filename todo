@@ -42,7 +42,10 @@ Also, there are currently three issues happening:
 		There is probably a "memory leak" (i.e., some optimization to be done) that
 		causes accumulation of resources. This is absolutely worth optimizing.
 
-If computing object metadata takes a few milliseconds whenever the camera / an object is moved, it will probably make for enormous savings later on when a million pixels are being computed.
+If computing object metadata takes a few milliseconds whenever the camera / an object is moved, it will still probably make for enormous savings later on when a million pixels are being computed.
+
+Before the lighting scheme is calibrated, it will be necessary to implement other bodies (spheres, facet bodies) so that more diverse lighting can be scrutinized.
+
 
 Preliminary trace:
 	get base color
