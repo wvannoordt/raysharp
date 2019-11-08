@@ -23,6 +23,7 @@ namespace raysharp
             camera = _camera;
             lights = new List<ILightSource>();
             bodies = new List<IRenderableBody>();
+            par_rdr = true;
         }
 
         private volatile Ray[,] rays;
@@ -30,7 +31,8 @@ namespace raysharp
         private volatile int[,] bodyid_field;
         private volatile RayImage im;
         private int nx, ny;
-        private const bool par_rdr = true;
+        private static bool par_rdr;
+        public static bool PAR_RENDER {set {par_rdr = value;}}
         public RayImage Render()
         {
             rays = camera.GetRays();
@@ -92,10 +94,8 @@ namespace raysharp
 
                 //Transform the input ray as to not take up extra memory.
                 r.Position = first_incident_point;
-                r.Direction = r.Direction - 2*(r.Direction*normal_vector)*normal_vector;//HERERERERE
+                r.Direction = r.Direction - 2*(r.Direction*normal_vector)*normal_vector;
                 adjust_for_diffuse_lighting(first_incident_point, normal_vector, r, ref color, 0.4);
-                //adjust_for_lighting()
-                //adjust_for_lighting(new Ray)
                 return color;
             }
 

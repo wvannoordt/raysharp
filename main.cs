@@ -10,7 +10,7 @@ namespace raysharp
 	{
 		public static void Main(string[] args)
 		{
-			Utils.WriteCsv("times.csv", Testing.OrbitCube());
+			Utils.WriteCsv("times.csv", Testing.RenderSphere());
 		}
 	}
 }
