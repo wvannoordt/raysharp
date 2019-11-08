@@ -11,8 +11,8 @@ namespace raysharp
         private const double NORMAL_EPSILON = 1e-6;
         private OpticalProperties optical_properties;
         public OpticalProperties BodyOpticalProperties {get {return optical_properties;} set{optical_properties = value;}}
-        private Triple anchor, rotaion_reference;
-        public Triple RotationReference {get {return rotaion_reference;}}
+        private Triple anchor, rotation_reference;
+        public Triple RotationReference {get {return rotation_reference;}}
         public Triple Anchor{get {return anchor;} set {anchor = value;}}
         private double side_length_x,side_length_y,side_length_z,xmin_global,xmax_global,ymin_global,ymax_global,zmin_global,zmax_global;
         public double SideLengthX {get {return side_length_x;}}
@@ -32,7 +32,7 @@ namespace raysharp
             side_length_z = _side_length;
             compute_global_box_bounds();
             optical_properties = new OpticalProperties();
-            rotaion_reference = new Triple(0, 0, 1);
+            rotation_reference = new Triple(0, 0, 1);
         }
         public RectangularPrism(Triple _anchor, double _side_length_x, double _side_length_y, double _side_length_z)
         {
@@ -42,7 +42,7 @@ namespace raysharp
             side_length_z = _side_length_z;
             compute_global_box_bounds();
             optical_properties = new OpticalProperties();
-            rotaion_reference = new Triple(0, 0, 1);
+            rotation_reference = new Triple(0, 0, 1);
         }
         public bool CheckIncidence(Ray r, out double distance, out Triple point_of_incidence, out Triple normal_vector)
         {
@@ -174,7 +174,8 @@ namespace raysharp
         }
         public void Move(Triple delta)
         {
-
+            anchor = anchor + delta;
+            compute_global_box_bounds();
         }
         public void Rotate(Triple axis, double angle)
         {

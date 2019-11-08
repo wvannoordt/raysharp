@@ -10,12 +10,12 @@ namespace raysharp
     {
         private Triple anchor;
         public Triple RotationReference {get;}
-        public double XminGlobal {get{return anchor.X - radius;}}
-        public double XmaxGlobal {get{return anchor.X + radius;}}
-        public double YminGlobal {get{return anchor.Y - radius;}}
-        public double YmaxGlobal {get{return anchor.Y + radius;}}
-        public double ZminGlobal {get{return anchor.Z - radius;}}
-        public double ZmaxGlobal {get{return anchor.Z + radius;}}
+        public double XminGlobal {get{return xmin_global;}}
+        public double XmaxGlobal {get{return xmax_global;}}
+        public double YminGlobal {get{return ymin_global;}}
+        public double YmaxGlobal {get{return ymax_global;}}
+        public double ZminGlobal {get{return zmin_global;}}
+        public double ZmaxGlobal {get{return zmax_global;}}
         public Triple Anchor{get{return anchor;} set{anchor=value;}}
         private OpticalProperties optical_properties;
         public OpticalProperties BodyOpticalProperties {get{return optical_properties;} set{optical_properties=value;}}
@@ -26,6 +26,16 @@ namespace raysharp
             optical_properties = new OpticalProperties();
             anchor = point;
             radius = _radius;
+            compute_bounds();
+        }
+        private void compute_bounds()
+        {
+            xmin_global = anchor.X - radius;
+            xmax_global = anchor.X + radius;
+            ymin_global = anchor.Y - radius;
+            ymax_global = anchor.Y + radius;
+            zmin_global = anchor.Z - radius;
+            zmax_global = anchor.Z + radius;
         }
         public bool CheckIncidence(Ray input, out double distance, out Triple point_of_incidence, out Triple normal_vector)
         {
@@ -41,12 +51,14 @@ namespace raysharp
             {
                 double pre = -1*input.Direction*pos_to_center;
                 double sqrt = Math.Sqrt(discriminant);
-                distance = Utils.MinPos(pre + sqrt, pre - sqrt) - 1e-6;
+                double d1 = pre + sqrt;
+                double d2 = pre - sqrt;
+                double dmin = Utils.Min(d1, d2);
+                double dmax = Utils.Min(d1, d2);
+                if (dmin < 0 && dmax < 0) return false;
+                distance = dmin;
                 point_of_incidence = input.Position + distance*input.Direction;
-                //Console.WriteLine(point_of_incidence);
                 normal_vector = (point_of_incidence - anchor).Unit();
-                //Console.WriteLine(normal_vector);
-                //Console.ReadLine();
                 return true;
             }
             else return false;
