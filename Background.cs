@@ -46,6 +46,7 @@ namespace raysharp
             if (has_floor) horizon_color = floor_color;
             else horizon_color = 0.85*floor_color;
             disable_anti_aliasing = false;
+            lightness = 0.2;
         }
         public void SetAntiAliasing(bool input)
         {

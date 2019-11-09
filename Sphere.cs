@@ -42,6 +42,7 @@ namespace raysharp
             distance = -1;
             point_of_incidence = null;
             normal_vector = null;
+            if (CheckContainsPoint(input.Position)) return false;
             Triple pos_to_center = input.Position - anchor;
             double A = pos_to_center*input.Direction;
             A *= A;
@@ -81,7 +82,8 @@ namespace raysharp
 
         public void Move(Triple delta)
         {
-
+            anchor = anchor + delta;
+            compute_bounds();
         }
         public void Rotate(Triple axis, double angle)
         {

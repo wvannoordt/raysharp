@@ -66,7 +66,7 @@ namespace raysharp
 		private bool came_from_binary_file;
 		private volatile int face_count;
 
-		private double delta_x, delta_y, delta_z;
+		private double delta_x, delta_y, delta_z, mean_x, mean_y, mean_z;
 
 		private volatile int x_box_count, y_box_count, z_box_count;
 
@@ -104,6 +104,132 @@ namespace raysharp
 				array_init();
 			}
 			metadata_init();
+		}
+		public FacetBody ToFacetBody(Triple point, bool center_coordinates = true)
+		{/*
+			private int face_count;
+	        private double[,] data;
+	        private double delta_x, delta_y, delta_z;
+	        private int x_box_count, y_box_count, z_box_count;
+	        private int[][] facet_lookup_edge_adjacencies;
+	        private int[][] facet_lookup_vertex_adjacencies;
+	        private int[][][] facet_lookup_box_covers;
+	        private int[,,][] box_lookup_facet_covers;
+	        double[] facet_localcoord_bounds;*/
+			FacetBody output = new FacetBody(point);
+
+			double[,] pass_data = clone_data(center_coordinates);
+			double[] pass_bounds = clone_bounds(center_coordinates);
+
+			output.PassRawData(face_count, pass_data, pass_bounds);
+			output.PassCoords(delta_x, delta_y, delta_z, x_box_count, y_box_count, z_box_count);
+
+			int[][] facet_lookup_edge_adjacencies = get_facet_lookup_edge_adjacencies_array();
+			int[][] facet_lookup_vertex_adjacencies = get_facet_lookup_vertex_adjacencies_array();
+			int[][][] facet_lookup_box_covers = get_facet_lookup_box_covers_array();
+			int[,,][] box_lookup_facet_covers = get_box_lookup_facet_covers_array();
+
+			output.PassMetaData(facet_lookup_edge_adjacencies, facet_lookup_vertex_adjacencies, facet_lookup_box_covers, box_lookup_facet_covers);
+
+			return output;
+
+		}
+		private int[][] get_facet_lookup_edge_adjacencies_array()
+		{
+			int[][] output = new int[face_count][];
+			for (int i = 0; i < face_count; i++) output[i] = edge_adjacencies_threadsafe[i].ToArray();
+			return output;
+		}
+		private int[][] get_facet_lookup_vertex_adjacencies_array()
+		{
+			int[][] output = new int[face_count][];
+			for (int i = 0; i < face_count; i++) output[i] = vertex_adjacencies_threadsafe[i].ToArray();
+			return output;
+		}
+		private int[][][] get_facet_lookup_box_covers_array()
+		{
+			int[][][] output = new int[face_count][][];
+			for (int i = 0; i < face_count; i++) output[i] = box_covers_threadsafe_facetlookup[i].ToArray();
+			return output;
+		}
+		private int[,,][] get_box_lookup_facet_covers_array()
+		{
+			int[,,][] output = new int[x_box_count, y_box_count, z_box_count][];
+			for (int i = 0; i < x_box_count; i++)
+			{
+				for (int j = 0; j < y_box_count; j++)
+				{
+					for (int k = 0; k < z_box_count; k++)
+					{
+						output[i,j,k] = box_covers_threadsafe[i,j,k].ToArray();
+					}
+				}
+			}
+			return output;
+		}
+		private double[] clone_bounds(bool center_coordinates)
+		{
+			double[] output = new double[6];
+			if (center_coordinates)
+			{
+				output[XMIN] = bounds[XMIN] - mean_x;
+				output[XMAX] = bounds[XMAX] - mean_x;
+				output[YMIN] = bounds[YMIN] - mean_y;
+				output[YMAX] = bounds[YMAX] - mean_y;
+				output[ZMIN] = bounds[ZMIN] - mean_z;
+				output[ZMAX] = bounds[ZMAX] - mean_z;
+			}
+			else
+			{
+				output[XMIN] = bounds[XMIN];
+				output[XMAX] = bounds[XMAX];
+				output[YMIN] = bounds[YMIN];
+				output[YMAX] = bounds[YMAX];
+				output[ZMIN] = bounds[ZMIN];
+				output[ZMAX] = bounds[ZMAX];
+			}
+			return output;
+		}
+		private double[,] clone_data(bool center_coordinates)
+		{
+			double[,] output = new double[face_count, 12];
+			if (center_coordinates)
+			{
+				for (int i = 0; i < face_count; i++)
+				{
+					output[i,X1] = data[i,X1] - mean_x;
+					output[i,X2] = data[i,X2] - mean_x;
+					output[i,X3] = data[i,X3] - mean_x;
+					output[i,Y1] = data[i,Y1] - mean_y;
+					output[i,Y2] = data[i,Y2] - mean_y;
+					output[i,Y3] = data[i,Y3] - mean_y;
+					output[i,Z1] = data[i,Z1] - mean_z;
+					output[i,Z2] = data[i,Z2] - mean_z;
+					output[i,Z3] = data[i,Z3] - mean_z;
+					output[i,N1] = data[i,N1];
+					output[i,N2] = data[i,N2];
+					output[i,N3] = data[i,N3];
+				}
+		   }
+		   else
+		   {
+				for (int i = 0; i < face_count; i++)
+				{
+					output[i,X1] = data[i,X1];
+					output[i,X2] = data[i,X2];
+					output[i,X3] = data[i,X3];
+					output[i,Y1] = data[i,Y1];
+					output[i,Y2] = data[i,Y2];
+					output[i,Y3] = data[i,Y3];
+					output[i,Z1] = data[i,Z1];
+					output[i,Z2] = data[i,Z2];
+					output[i,Z3] = data[i,Z3];
+					output[i,N1] = data[i,N1];
+					output[i,N2] = data[i,N2];
+					output[i,N3] = data[i,N3];
+				}
+			}
+			return output;
 		}
 		private void metadata_init()
 		{
@@ -259,6 +385,11 @@ namespace raysharp
 		}
 		private void array_init()
 		{
+
+			mean_x = 0;
+			mean_y = 0;
+			mean_z = 0;
+
 			data = new double[face_count, 12];
 
 			//Probably needs to be parallelized.
@@ -310,6 +441,16 @@ namespace raysharp
 				data[current_real_idx, Y3] = (double)System.BitConverter.ToSingle(all_bytes, i + 40);
 				data[current_real_idx, Z3] = (double)System.BitConverter.ToSingle(all_bytes, i + 44);
 
+				mean_x = mean_x + data[current_real_idx, X1];
+				mean_x = mean_x + data[current_real_idx, X2];
+				mean_x = mean_x + data[current_real_idx, X3];
+				mean_y = mean_y + data[current_real_idx, Y1];
+				mean_y = mean_y + data[current_real_idx, Y2];
+				mean_y = mean_y + data[current_real_idx, Y3];
+				mean_z = mean_z + data[current_real_idx, Z1];
+				mean_z = mean_z + data[current_real_idx, Z2];
+				mean_z = mean_z + data[current_real_idx, Z3];
+
 				local_xmin = Utils.Min(data[current_real_idx, X1], data[current_real_idx, X2], data[current_real_idx, X3]);
 				local_ymin = Utils.Min(data[current_real_idx, Y1], data[current_real_idx, Y2], data[current_real_idx, Y3]);
 				local_zmin = Utils.Min(data[current_real_idx, Z1], data[current_real_idx, Z2], data[current_real_idx, Z3]);
@@ -340,6 +481,10 @@ namespace raysharp
 			bounds[YMAX] = bounds[YMAX] + inflate_y;
 			bounds[ZMIN] = bounds[ZMIN] - inflate_z;
 			bounds[ZMAX] = bounds[ZMAX] + inflate_z;
+
+			mean_x = mean_x / (3*face_count);
+			mean_y = mean_y / (3*face_count);
+			mean_z = mean_z / (3*face_count);
 
 			double avg_delta_x = sum_x_length / face_count;
 			double avg_delta_y = sum_y_length / face_count;
@@ -430,6 +575,16 @@ namespace raysharp
 
 						data_stream.Add(new double[] {x1, y1, z1, x2, y2, z2, x3, y3, z3, n1, n2, n3});
 
+						mean_x = mean_x + x1;
+						mean_x = mean_x + x2;
+						mean_x = mean_x + x3;
+						mean_y = mean_y + y1;
+						mean_y = mean_y + y2;
+						mean_y = mean_y + y3;
+						mean_z = mean_z + z1;
+						mean_z = mean_z + z2;
+						mean_z = mean_z + z3;
+
 						//(xmin xmax ymin ymax zmin zmax)
 						local_xmin = Utils.Min(x1, x2, x3);
 						local_ymin = Utils.Min(y1, y2, y3);
@@ -466,6 +621,10 @@ namespace raysharp
 				bounds[ZMAX] = bounds[ZMAX] + inflate_z;
 
 				face_count = data_stream.Count;
+
+				mean_x = mean_x / (3*face_count);
+				mean_y = mean_y / (3*face_count);
+				mean_z = mean_z / (3*face_count);
 
 				double avg_delta_x = sum_x_length / face_count;
 				double avg_delta_y = sum_y_length / face_count;

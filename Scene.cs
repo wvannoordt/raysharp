@@ -102,6 +102,7 @@ namespace raysharp
         }
         private void adjust_for_diffuse_lighting(Triple collision_point, Triple normal_vector_in, Ray reflected_ray, ref Triple color, double body_reflection_parameter)
         {
+            bool shadow = true;
             foreach (ILightSource light_source in lights)
             {
                 int bid;
@@ -113,6 +114,7 @@ namespace raysharp
                 get_relevant_body(pointing_ray, out bid, out dist_null, out point_null, out normal_vector_null);
                 if (bid == BACKGROUND_ID)
                 {
+                    shadow = false;
                     double t = body_reflection_parameter*light_source.GetPercentLightReception(pointing_ray);
                     color = (1-t) * color + t*light_source.BaseColor;
                     double t2 = body_reflection_parameter*light_source.GetPercentLightReception(reflected_ray);
@@ -120,6 +122,10 @@ namespace raysharp
                     double t3 = body_reflection_parameter*light_source.GetPercentLightReception(new Ray(collision_point, normal_vector_in));
                     color = (1-t3) * color + t3*light_source.BaseColor;
                 }
+            }
+            if (shadow)
+            {
+                color = backdrop.Lightness*color;
             }
         }
         private Triple trace_ray_recursive(Ray input_ray, int current_depth, int max_depth, int force_body, Triple current_color)
