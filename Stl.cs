@@ -105,24 +105,19 @@ namespace raysharp
 			}
 			metadata_init();
 		}
-		public FacetBody ToFacetBody(Triple point, bool center_coordinates = true)
-		{/*
-			private int face_count;
-	        private double[,] data;
-	        private double delta_x, delta_y, delta_z;
-	        private int x_box_count, y_box_count, z_box_count;
-	        private int[][] facet_lookup_edge_adjacencies;
-	        private int[][] facet_lookup_vertex_adjacencies;
-	        private int[][][] facet_lookup_box_covers;
-	        private int[,,][] box_lookup_facet_covers;
-	        double[] facet_localcoord_bounds;*/
+		public FacetBody ToFacetBody(Triple point, double[] new_bounds)
+		{
 			FacetBody output = new FacetBody(point);
 
-			double[,] pass_data = clone_data(center_coordinates);
-			double[] pass_bounds = clone_bounds(center_coordinates);
+			double[,] pass_data = clone_data(new_bounds);
+			double[] pass_bounds = clone_bounds(new_bounds);
 
 			output.PassRawData(face_count, pass_data, pass_bounds);
-			output.PassCoords(delta_x, delta_y, delta_z, x_box_count, y_box_count, z_box_count);
+
+			double new_delta_x = delta_x*(new_bounds[XMAX] - new_bounds[XMIN])/(bounds[XMAX]-bounds[XMIN]);
+			double new_delta_y = delta_y*(new_bounds[YMAX] - new_bounds[YMIN])/(bounds[YMAX]-bounds[YMIN]);;
+			double new_delta_z = delta_z*(new_bounds[ZMAX] - new_bounds[ZMIN])/(bounds[ZMAX]-bounds[ZMIN]);;
+			output.PassCoords(new_delta_x, new_delta_y, new_delta_z, x_box_count, y_box_count, z_box_count);
 
 			int[][] facet_lookup_edge_adjacencies = get_facet_lookup_edge_adjacencies_array();
 			int[][] facet_lookup_vertex_adjacencies = get_facet_lookup_vertex_adjacencies_array();
@@ -132,6 +127,11 @@ namespace raysharp
 			output.PassMetaData(facet_lookup_edge_adjacencies, facet_lookup_vertex_adjacencies, facet_lookup_box_covers, box_lookup_facet_covers);
 
 			return output;
+
+		}
+		public FacetBody ToFacetBody(Triple point)
+		{
+			return ToFacetBody(point, bounds);
 
 		}
 		private int[][] get_facet_lookup_edge_adjacencies_array()
@@ -167,67 +167,48 @@ namespace raysharp
 			}
 			return output;
 		}
-		private double[] clone_bounds(bool center_coordinates)
+		private double[] clone_bounds(double[] new_bounds)
 		{
 			double[] output = new double[6];
-			if (center_coordinates)
-			{
-				output[XMIN] = bounds[XMIN] - mean_x;
-				output[XMAX] = bounds[XMAX] - mean_x;
-				output[YMIN] = bounds[YMIN] - mean_y;
-				output[YMAX] = bounds[YMAX] - mean_y;
-				output[ZMIN] = bounds[ZMIN] - mean_z;
-				output[ZMAX] = bounds[ZMAX] - mean_z;
-			}
-			else
-			{
-				output[XMIN] = bounds[XMIN];
-				output[XMAX] = bounds[XMAX];
-				output[YMIN] = bounds[YMIN];
-				output[YMAX] = bounds[YMAX];
-				output[ZMIN] = bounds[ZMIN];
-				output[ZMAX] = bounds[ZMAX];
-			}
+			output[XMIN] = new_bounds[XMIN];
+			output[XMAX] = new_bounds[XMAX];
+			output[YMIN] = new_bounds[YMIN];
+			output[YMAX] = new_bounds[YMAX];
+			output[ZMIN] = new_bounds[ZMIN];
+			output[ZMAX] = new_bounds[ZMAX];
 			return output;
 		}
-		private double[,] clone_data(bool center_coordinates)
+		private double[,] clone_data(double[] new_bounds)
 		{
 			double[,] output = new double[face_count, 12];
-			if (center_coordinates)
+
+			double LX_old = bounds[XMAX] - bounds[XMIN];
+			double LY_old = bounds[YMAX] - bounds[YMIN];
+			double LZ_old = bounds[ZMAX] - bounds[ZMIN];
+
+			double LX_new = new_bounds[XMAX] - new_bounds[XMIN];
+			double LY_new = new_bounds[YMAX] - new_bounds[YMIN];
+			double LZ_new = new_bounds[ZMAX] - new_bounds[ZMIN];
+
+			double x_ratio = LX_new / LX_old;
+			double y_ratio = LY_new / LY_old;
+			double z_ratio = LZ_new / LZ_old;
+
+			for (int i = 0; i < face_count; i++)
 			{
-				for (int i = 0; i < face_count; i++)
-				{
-					output[i,X1] = data[i,X1] - mean_x;
-					output[i,X2] = data[i,X2] - mean_x;
-					output[i,X3] = data[i,X3] - mean_x;
-					output[i,Y1] = data[i,Y1] - mean_y;
-					output[i,Y2] = data[i,Y2] - mean_y;
-					output[i,Y3] = data[i,Y3] - mean_y;
-					output[i,Z1] = data[i,Z1] - mean_z;
-					output[i,Z2] = data[i,Z2] - mean_z;
-					output[i,Z3] = data[i,Z3] - mean_z;
-					output[i,N1] = data[i,N1];
-					output[i,N2] = data[i,N2];
-					output[i,N3] = data[i,N3];
-				}
-		   }
-		   else
-		   {
-				for (int i = 0; i < face_count; i++)
-				{
-					output[i,X1] = data[i,X1];
-					output[i,X2] = data[i,X2];
-					output[i,X3] = data[i,X3];
-					output[i,Y1] = data[i,Y1];
-					output[i,Y2] = data[i,Y2];
-					output[i,Y3] = data[i,Y3];
-					output[i,Z1] = data[i,Z1];
-					output[i,Z2] = data[i,Z2];
-					output[i,Z3] = data[i,Z3];
-					output[i,N1] = data[i,N1];
-					output[i,N2] = data[i,N2];
-					output[i,N3] = data[i,N3];
-				}
+				output[i,X1] = new_bounds[XMIN]+x_ratio*(data[i,X1]-bounds[XMIN]);
+				output[i,X2] = new_bounds[XMIN]+x_ratio*(data[i,X2]-bounds[XMIN]);
+				output[i,X3] = new_bounds[XMIN]+x_ratio*(data[i,X3]-bounds[XMIN]);
+				output[i,Y1] = new_bounds[YMIN]+y_ratio*(data[i,Y1]-bounds[YMIN]);
+				output[i,Y2] = new_bounds[YMIN]+y_ratio*(data[i,Y2]-bounds[YMIN]);
+				output[i,Y3] = new_bounds[YMIN]+y_ratio*(data[i,Y3]-bounds[YMIN]);
+				output[i,Z1] = new_bounds[ZMIN]+z_ratio*(data[i,Z1]-bounds[ZMIN]);
+				output[i,Z2] = new_bounds[ZMIN]+z_ratio*(data[i,Z2]-bounds[ZMIN]);
+				output[i,Z3] = new_bounds[ZMIN]+z_ratio*(data[i,Z3]-bounds[ZMIN]);
+				Triple normal_vector = new Triple(x_ratio*data[i,N1], y_ratio*data[i,N2], z_ratio*data[i,N3]).Unit();
+				output[i,N1] = normal_vector.X;
+				output[i,N2] = normal_vector.Y;
+				output[i,N3] = normal_vector.Z;
 			}
 			return output;
 		}

@@ -8,6 +8,69 @@ namespace raysharp
 {
 	public static class Testing
 	{
+		public static double[] RenderTeapot()
+		{
+			int nx = 1320;
+			int ny = 768;
+			int N = 90;
+			double dtheta = 2*Math.PI/N;
+			Triple cube_pos = new Triple (0,0,12);
+			Background basic = new Background();
+			basic.HasFloor = true;
+			double radius = 25;
+			double elev = -0.15;
+			double height = 15;
+
+			List<double> times = new List<double>();
+
+			GlobalLightSource light = new GlobalLightSource(new Triple(1, 2, -4));
+
+			Triple pos = new Triple (0,0,height);
+			Camera c = new Camera(pos, elev, 0, nx, ny, 0.9);
+			Sphere ball = new Sphere(cube_pos, 3);
+
+			Stl teapot_stl = new Stl("stl/tetra_scaled.stl");
+
+			FacetBody teapot = teapot_stl.ToFacetBody(cube_pos + new Triple(5, 0, 0));
+
+			teapot.WriteAsciiStl("stl/TESTING.stl");
+
+			RectangularPrism floor = new RectangularPrism(new Triple(0, 0, 2), 70, 70, 1);
+			RectangularPrism eq = new RectangularPrism(cube_pos, 10, 10, 10);
+
+			ball.BodyOpticalProperties.BaseColor = new Triple(0.7, 0.2, 0.2);
+			eq.BodyOpticalProperties.BaseColor = new Triple(0.7, 0.2, 0.2);
+			teapot.BodyOpticalProperties.BaseColor = new Triple(0.7, 0.2, 0.2);
+
+			Scene main_scene = new Scene(basic, c);
+			//main_scene.AddBody(ball);
+			main_scene.AddBody(floor);
+			main_scene.AddBody(teapot);
+			//main_scene.AddBody(eq);
+
+			main_scene.AddLight(light);
+
+			Scene.PAR_RENDER = true;
+
+			CustomStopWatch w = new CustomStopWatch();
+			for (int i = 0; i < N; i++)
+			{
+				double theta = i*dtheta;
+
+				pos = new Triple(-radius*Math.Cos(-theta), radius*Math.Sin(-theta), height);// + 5*Math.Sin(theta));
+				ball.Move(new Triple(0, 0, -0.9));
+				//pos = new Triple(-radius, 0, height);
+				main_scene.SceneCamera.AzimuthAngle = theta;
+				//main_scene.SceneCamera.ElevationAngle = -0.19740*Math.Sin(theta);
+				main_scene.SceneCamera.Position = pos;
+				w.tic();
+				RayImage r = main_scene.Render();
+				times.Add(w.toc());
+				w.Report("render " + i.ToString());
+				r.Save("frames/img" + (i).ToString().PadLeft(3, '0') + ".png");
+			}
+			return times.ToArray();
+		}
 		public static double[] RenderSphere()
 		{
 			int nx = 1320;

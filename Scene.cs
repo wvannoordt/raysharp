@@ -128,17 +128,6 @@ namespace raysharp
                 color = backdrop.Lightness*color;
             }
         }
-        private Triple trace_ray_recursive(Ray input_ray, int current_depth, int max_depth, int force_body, Triple current_color)
-        {
-            double a = 0;
-            bool incident = false;
-            foreach (IRenderableBody body in bodies)
-            {
-                incident = incident || check_bounding_box_incidence(input_ray, body, out a);
-            }
-            if (incident) return new Triple(0, 1, 0);
-            return backdrop.GetBackgroundColor(input_ray, out a);
-        }
 
         private void get_relevant_body(Ray input, out int body_id, out double dist, out Triple point_of_incidence, out Triple normal_vector_out)
         {
@@ -176,93 +165,17 @@ namespace raysharp
 
         private bool check_bounding_box_incidence(Ray r, IRenderableBody b, out double dist_estimate)
         {
-            //Quadrant check
-            bool xmin_possible = Math.Sign(b.XminGlobal - r.X) == Math.Sign(r.V1);
-            bool xmax_possible = Math.Sign(b.XmaxGlobal - r.X) == Math.Sign(r.V1);
-            bool ymin_possible = Math.Sign(b.YminGlobal - r.Y) == Math.Sign(r.V2);
-            bool ymax_possible = Math.Sign(b.YmaxGlobal - r.Y) == Math.Sign(r.V2);
-            bool zmin_possible = Math.Sign(b.ZminGlobal - r.Z) == Math.Sign(r.V3);
-            bool zmax_possible = Math.Sign(b.ZmaxGlobal - r.Z) == Math.Sign(r.V3);
-            if (!((xmin_possible||xmax_possible) && (ymin_possible||ymax_possible) && (zmin_possible||zmax_possible)))
+            double[] bounds = new double[]
             {
-                dist_estimate = -1;
-                return false;
-            }
-
-            //Bounding box check
-            double[] dists = new double[]
-            {
-                (b.XminGlobal - r.X)/r.V1, //xmin
-                (b.XmaxGlobal - r.X)/r.V1, //xmax
-                (b.YminGlobal - r.Y)/r.V2, //ymin
-                (b.YmaxGlobal - r.Y)/r.V2, //ymax
-                (b.ZminGlobal - r.Z)/r.V3, //zmin
-                (b.ZmaxGlobal - r.Z)/r.V3 //zmax
+                b.XminGlobal,
+                b.XmaxGlobal,
+                b.YminGlobal,
+                b.YmaxGlobal,
+                b.ZminGlobal,
+                b.ZmaxGlobal
             };
-
-            bool confirm = false;
-            double cur_min_dist = -1;
-            Triple xmin_position = r.Position + dists[0]*r.Direction;
-            if (xmin_position.Y <= b.YmaxGlobal && xmin_position.Y > b.YminGlobal && xmin_position.Z <= b.ZmaxGlobal && xmin_position.Z > b.ZminGlobal)
-            {
-                if (cur_min_dist < 0 || dists[0] < cur_min_dist)
-                {
-                    confirm = true;
-                    cur_min_dist = dists[0];
-                }
-            }
-            Triple xmax_position = r.Position + dists[1]*r.Direction;
-            if (xmax_position.Y <= b.YmaxGlobal && xmax_position.Y > b.YminGlobal && xmax_position.Z <= b.ZmaxGlobal && xmax_position.Z > b.ZminGlobal)
-            {
-                if (cur_min_dist < 0 || dists[1] < cur_min_dist)
-                {
-                    confirm = true;
-                    cur_min_dist = dists[1];
-                }
-            }
-            Triple ymin_position = r.Position + dists[2]*r.Direction;
-            if (ymin_position.Z <= b.ZmaxGlobal && ymin_position.Z > b.ZminGlobal && ymin_position.X <= b.XmaxGlobal && ymin_position.X > b.XminGlobal)
-            {
-                if (cur_min_dist < 0 || dists[2] < cur_min_dist)
-                {
-                    confirm = true;
-                    cur_min_dist = dists[2];
-                }
-            }
-            Triple ymax_position = r.Position + dists[3]*r.Direction;
-            if (ymax_position.Z <= b.ZmaxGlobal && ymax_position.Z > b.ZminGlobal && ymax_position.X <= b.XmaxGlobal && ymax_position.X > b.XminGlobal)
-            {
-                if (cur_min_dist < 0 || dists[3] < cur_min_dist)
-                {
-                    confirm = true;
-                    cur_min_dist = dists[3];
-                }
-            }
-            Triple zmin_position = r.Position + dists[4]*r.Direction;
-            if (zmin_position.X <= b.XmaxGlobal && zmin_position.X > b.XminGlobal && zmin_position.Y <= b.YmaxGlobal && zmin_position.Y > b.YminGlobal)
-            {
-                if (cur_min_dist < 0 || dists[4] < cur_min_dist)
-                {
-                    confirm = true;
-                    cur_min_dist = dists[4];
-                }
-            }
-            Triple zmax_position = r.Position + dists[5]*r.Direction;
-            if (zmax_position.X <= b.XmaxGlobal && zmax_position.X > b.XminGlobal && zmax_position.Y <= b.YmaxGlobal && zmax_position.Y > b.YminGlobal)
-            {
-                if (cur_min_dist < 0 || dists[5] < cur_min_dist)
-                {
-                    confirm = true;
-                    cur_min_dist = dists[5];
-                }
-            }
-            if (confirm)
-            {
-                dist_estimate = cur_min_dist;
-                return true;
-            }
-            dist_estimate = -1;
-            return false;
+            Triple null1, null2;
+            return Utils.CheckBoxIncidence(r, bounds, out null1, out null2, out dist_estimate);
         }
     }
 }
