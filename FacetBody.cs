@@ -109,6 +109,8 @@ namespace raysharp
         {
             distance = -1;
             normal_vector = null;
+            double[] bounds = new double[] {xmin_global, xmax_global, ymin_global, ymax_global, zmin_global, zmax_global};
+            //return Utils.CheckBoxIncidence(input, bounds, out point_of_incidence, out normal_vector, out distance);
             int id = compute_candidate_face_id(input, out point_of_incidence, out distance);
             if (id >= 0)
             {
@@ -123,6 +125,7 @@ namespace raysharp
             int output = -1;
             point_of_incidence = null;
             distance = -1;
+
             /*List<int[]> cover = new List<int[]>();
             List<double> distances = new List<double>();
             for (int i = 0; i < x_box_count; i++)
@@ -189,13 +192,13 @@ namespace raysharp
             point_of_incidence = null;
             distance = -1;
 
-            double c_p_n = (data[i,X1]-input.Position.X)*data[i,N1] + (data[i,Y1]-input.Position.Y)*data[i,N2] + (data[i,Z1]-input.Position.Z)*data[i,N3];
+            double c_p_n = (data[i,X1] + anchor.X - input.Position.X)*data[i,N1] + (data[i,Y1] + anchor.Y - input.Position.Y)*data[i,N2] + (data[i,Z1] + anchor.Z - input.Position.Z)*data[i,N3];
             double r_n = input.Direction.X*data[i,N1] + input.Direction.Y*data[i,N2] + input.Direction.Z*data[i,N3];
             double t = c_p_n/r_n;
             if (t < 0) return false;
 
             //Definitely on-plane
-            Triple tentative_point_of_incidence = input.Position + t*input.Direction;
+            Triple tentative_point_of_incidence = input.Position + t*input.Direction - anchor;
             if (check_face_contains(tentative_point_of_incidence, i))
             {
                 point_of_incidence = tentative_point_of_incidence;
@@ -210,17 +213,10 @@ namespace raysharp
             Triple v1 = new Triple(data[i,X1], data[i,Y1], data[i,Z1]);
             Triple v2 = new Triple(data[i,X2], data[i,Y2], data[i,Z2]);
             Triple v3 = new Triple(data[i,X3], data[i,Y3], data[i,Z3]);
-            //Console.Write("v1: ");
-            //Console.WriteLine(v1);
-            //Console.Write("v2: ");
-            //Console.WriteLine(v2);
-            //Console.Write("v3: ");
-            //Console.WriteLine(v3);
             double area1 = get_area(v1, v2, tentative_point_of_incidence);
             double area2 = get_area(v1, v3, tentative_point_of_incidence);
             double area3 = get_area(v2, v3, tentative_point_of_incidence);
-            //Console.WriteLine(Math.Abs((area1 + area2 + area3) - face_areas[i]));
-            return Math.Abs((area1 + area2 + area3) - face_areas[i]) < 0.01;
+            return Utils.CheckMachineZero(area1 + area2 + area3 - face_areas[i]);
         }
         private double get_area(Triple a, Triple b, Triple c)
         {

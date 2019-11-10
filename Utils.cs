@@ -6,6 +6,11 @@ namespace raysharp
 {
     public static class Utils
     {
+        private static double EPSILON =1e-8;
+        public static bool CheckMachineZero(double a)
+        {
+            return Math.Abs(a) < EPSILON;
+        }
         public static bool CheckBoxIncidence(Ray r, double[] bounds, out Triple point_of_incidence, out Triple normal_vector, out double distance)
         {
             point_of_incidence = null;

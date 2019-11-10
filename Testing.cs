@@ -12,7 +12,7 @@ namespace raysharp
 		{
 			int nx = 1320;
 			int ny = 768;
-			int N = 90;
+			int N = 10;
 			double dtheta = 2*Math.PI/N;
 			Triple cube_pos = new Triple (0,0,12);
 			Background basic = new Background();
