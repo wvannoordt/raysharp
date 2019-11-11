@@ -46,6 +46,8 @@ If computing object metadata takes a few milliseconds whenever the camera / an o
 
 Before the lighting scheme is calibrated, it will be necessary to implement other bodies (spheres, facet bodies) so that more diverse lighting can be scrutinized.
 
+At some point, each body will need to implement some kind of local coordinate transformation for full generality
+
 
 Preliminary trace:
 	get base color

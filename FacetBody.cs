@@ -146,9 +146,9 @@ namespace raysharp
 
             int[][] cover_arr = new int[cover.Count][];
             double[] dist_arr = distances.ToArray();
-            for (int i = 0; i < cover.Count; i++) cover_arr[i] = cover[i];*/
+            for (int i = 0; i < cover.Count; i++) cover_arr[i] = cover[i];
 
-            /*Utils.SortAccording<int[]>(cover_arr, dist_arr);
+            //Utils.SortAccording<int[]>(cover_arr, dist_arr);
             for (int i = 0; i < cover_arr.Length; i++)
             {
                 double current_min_face_distance = double.PositiveInfinity;
@@ -197,8 +197,8 @@ namespace raysharp
             double t = c_p_n/r_n;
             if (t < 0) return false;
 
-            //Definitely on-plane
-            Triple tentative_point_of_incidence = input.Position + t*input.Direction - anchor;
+            //Definitely on-plane, in global coordinates
+            Triple tentative_point_of_incidence = input.Position + t*input.Direction;
             if (check_face_contains(tentative_point_of_incidence, i))
             {
                 point_of_incidence = tentative_point_of_incidence;
@@ -209,10 +209,9 @@ namespace raysharp
         }
         private bool check_face_contains(Triple tentative_point_of_incidence, int i)
         {
-            //Console.WriteLine("i: " + i);
-            Triple v1 = new Triple(data[i,X1], data[i,Y1], data[i,Z1]);
-            Triple v2 = new Triple(data[i,X2], data[i,Y2], data[i,Z2]);
-            Triple v3 = new Triple(data[i,X3], data[i,Y3], data[i,Z3]);
+            Triple v1 = new Triple(data[i,X1], data[i,Y1], data[i,Z1]) + anchor;
+            Triple v2 = new Triple(data[i,X2], data[i,Y2], data[i,Z2]) + anchor;
+            Triple v3 = new Triple(data[i,X3], data[i,Y3], data[i,Z3]) + anchor;
             double area1 = get_area(v1, v2, tentative_point_of_incidence);
             double area2 = get_area(v1, v3, tentative_point_of_incidence);
             double area3 = get_area(v2, v3, tentative_point_of_incidence);

@@ -53,6 +53,7 @@ namespace raysharp
         }
         private void render_single(int i)
         {
+            Console.WriteLine(i);
             for (int j = 0; j < ny; j++)
             {
                 //depth = 1 is a temporary fix!!

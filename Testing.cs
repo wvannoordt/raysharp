@@ -12,7 +12,7 @@ namespace raysharp
 		{
 			int nx = 1320;
 			int ny = 768;
-			int N = 10;
+			int N = 1;
 			double dtheta = 2*Math.PI/N;
 			Triple cube_pos = new Triple (0,0,12);
 			Background basic = new Background();
@@ -29,7 +29,7 @@ namespace raysharp
 			Camera c = new Camera(pos, elev, 0, nx, ny, 0.9);
 			Sphere ball = new Sphere(cube_pos, 3);
 
-			Stl teapot_stl = new Stl("stl/tetra_scaled.stl");
+			Stl teapot_stl = new Stl("stl/bulb.stl");
 
 			FacetBody teapot = teapot_stl.ToFacetBody(cube_pos + new Triple(5, 0, 0));
 
