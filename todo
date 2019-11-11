@@ -46,8 +46,11 @@ If computing object metadata takes a few milliseconds whenever the camera / an o
 
 Before the lighting scheme is calibrated, it will be necessary to implement other bodies (spheres, facet bodies) so that more diverse lighting can be scrutinized.
 
-At some point, each body will need to implement some kind of local coordinate transformation for full generality
+At some point, each body will need to implement some kind of local coordinate transformation for full generality.
 
+Need to figure out how to compute ray covers in a sensible fashion. Will probably need to do a case where the ray starts in the bounding box (will make self-shadows MUCH faster) and a case
+where it does not. The cover should be sorted in the direction of the ray and then each box should be checked in that order. If an incidence is found, then no more bounding boxes are checked.
+the minimal-distance incidence is taken as the relevant one.
 
 Preliminary trace:
 	get base color
