@@ -21,6 +21,7 @@ namespace raysharp
 			double elev = -0.15;
 			double height = 15;
 
+			//rdr times
 			List<double> times = new List<double>();
 
 			GlobalLightSource light = new GlobalLightSource(new Triple(1, 2, -4));
