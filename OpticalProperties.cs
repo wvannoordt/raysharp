@@ -13,6 +13,7 @@ namespace raysharp
         public bool IsReflective {get; set;}
         public bool IsTransparent {get; set;}
         public double AbsorptionCoefficient {get; set;}
+        public double Reflectivity {get; set;}
         public OpticalProperties()
         {
             RefractiveIndex = 1.3;
@@ -20,6 +21,7 @@ namespace raysharp
             IsReflective = false;
             IsTransparent = false;
             AbsorptionCoefficient = 1.0;
+            Reflectivity = 0;
         }
 
     }

@@ -12,7 +12,7 @@ namespace raysharp
 		{
 			int nx = 1320;
 			int ny = 768;
-			int N = 1;
+			int N = 60;
 			double dtheta = 2*Math.PI/N;
 			Triple cube_pos = new Triple (0,0,12);
 			Background basic = new Background();
@@ -32,16 +32,18 @@ namespace raysharp
 
 			Stl teapot_stl = new Stl("stl/bulb.stl");
 
-			FacetBody teapot = teapot_stl.ToFacetBody(cube_pos + new Triple(5, 0, 0));
+			FacetBody teapot = teapot_stl.ToFacetBody(cube_pos + new Triple(5, 1.5, 0));
 
 			teapot.WriteAsciiStl("stl/TESTING.stl");
 
-			RectangularPrism floor = new RectangularPrism(new Triple(0, 0, 2), 70, 70, 1);
+			RectangularPrism floor = new RectangularPrism(new Triple(0, 0, 0), 70, 70, teapot.ZminGlobal * 2);
 			RectangularPrism eq = new RectangularPrism(cube_pos, 10, 10, 10);
 
 			ball.BodyOpticalProperties.BaseColor = new Triple(0.7, 0.2, 0.2);
 			eq.BodyOpticalProperties.BaseColor = new Triple(0.7, 0.2, 0.2);
 			teapot.BodyOpticalProperties.BaseColor = new Triple(0.7, 0.2, 0.2);
+			teapot.BodyOpticalProperties.IsReflective = true;
+			teapot.BodyOpticalProperties.Reflectivity = 0.185;
 
 			Scene main_scene = new Scene(basic, c);
 			//main_scene.AddBody(ball);

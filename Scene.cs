@@ -9,6 +9,9 @@ namespace raysharp
 {
     public class Scene
     {
+        private const double NORMAL_EPSILON = 1e-6;
+        private static double GLOBAL_DIFFUSIVE_CONST_NORMAL = 0.06;
+        private static double GLOBAL_DIFFUSIVE_CONST_REFLECT = 0.0006;
         private Background backdrop;
         private List<ILightSource> lights;
         private List<IRenderableBody> bodies;
@@ -57,7 +60,7 @@ namespace raysharp
             for (int j = 0; j < ny; j++)
             {
                 //depth = 1 is a temporary fix!!
-                Triple color = TraceRay(rays[i,j], 1, out bodyid_field[i,j], out distance_field[i,j]);
+                Triple color = TraceRay(rays[i,j], 0, 2, out bodyid_field[i,j], out distance_field[i,j]);
                 im.SetPixelXY(i,j,color);
             }
         }
@@ -70,8 +73,14 @@ namespace raysharp
         {
             lights.Add(light);
         }
-        public Triple TraceRay(Ray r, int max_depth, out int body_id, out double distance)
+        public Triple TraceRay(Ray r, int current_depth, int max_depth, out int body_id, out double distance)
         {
+            if (current_depth > max_depth)
+            {
+                body_id = -1;
+                distance = -1;
+                return new Triple(0,0,0);
+            }
             //The fact that the body id and the distance are returned warrants
             //separate computation for the level 0 pass. The primary pass will also need lighting rays.
             int relevant_body = -1;
@@ -94,10 +103,19 @@ namespace raysharp
                 Triple color = bodies[relevant_body].BodyOpticalProperties.BaseColor.clone();
 
                 //Transform the input ray as to not take up extra memory.
-                r.Position = first_incident_point;
+                r.Position = first_incident_point + NORMAL_EPSILON*normal_vector;
                 r.Direction = r.Direction - 2*(r.Direction*normal_vector)*normal_vector;
                 adjust_for_diffuse_lighting(first_incident_point, normal_vector, r, ref color, 0.4);
-                return color;
+                int null1;
+                double null2;
+                if (bodies[relevant_body].BodyOpticalProperties.IsReflective)
+                {
+                    return (1-bodies[relevant_body].BodyOpticalProperties.Reflectivity)*color + bodies[relevant_body].BodyOpticalProperties.Reflectivity*TraceRay(r, current_depth + 1, max_depth, out null1, out null2);
+                }
+                else
+                {
+                    return color;
+                }
             }
 
         }
@@ -111,7 +129,7 @@ namespace raysharp
                 Triple point_null;
                 Triple normal_vector_null;
                 //Need the small normal correction otherwise machine error gives spottiness.
-                Ray pointing_ray = light_source.ComputeDiffuseLightingRay(collision_point + (1e-6)*normal_vector_in);
+                Ray pointing_ray = light_source.ComputeDiffuseLightingRay(collision_point + NORMAL_EPSILON*normal_vector_in);
                 get_relevant_body(pointing_ray, out bid, out dist_null, out point_null, out normal_vector_null);
                 if (bid == BACKGROUND_ID)
                 {
@@ -127,6 +145,68 @@ namespace raysharp
             if (shadow)
             {
                 color = backdrop.Lightness*color;
+                /*Ray face_normal_ray = new Ray(collision_point + NORMAL_EPSILON*normal_vector_in, normal_vector_in);
+                Ray face_reflected_ray = new Ray(collision_point + NORMAL_EPSILON*normal_vector_in, reflected_ray.Direction);
+                face_normal_ray.Position = face_normal_ray.Position + NORMAL_EPSILON * face_normal_ray.Direction;
+
+
+                int bid_normal;
+                double distance_normal;
+                Triple normal_incident_point;
+                Triple normal_vector_null;
+
+                //adjust for normal proximity
+                get_relevant_body(face_normal_ray, out bid_normal, out distance_normal, out normal_incident_point, out normal_vector_null);
+                if (bid_normal != BACKGROUND_ID)
+                {
+                    double null1;
+                    Triple null2, null3;
+                    int id;
+                    bool is_lit = false;
+                    foreach (ILightSource light_source in lights)
+                    {
+                        Ray pointing_ray = light_source.ComputeDiffuseLightingRay(normal_incident_point);
+                        pointing_ray.Position = pointing_ray.Position + NORMAL_EPSILON*normal_vector_null;
+                        get_relevant_body(pointing_ray, out id, out null1, out null2, out null3);
+                        if (id != BACKGROUND_ID)
+                        {
+                            is_lit = true;
+                            break;
+                        }
+                    }
+                    Triple body_target_color = bodies[bid_normal].BodyOpticalProperties.BaseColor;
+                    double t = Math.Exp(-GLOBAL_DIFFUSIVE_CONST_NORMAL*distance_normal);
+                    if (is_lit) color = t*body_target_color + (1-t)*color;
+                }
+
+                int bid_reflect;
+                double distance_reflect;
+                Triple reflect_incident_point;
+                Triple reflect_vector_null;
+                //adjust for reflected proximity
+                get_relevant_body(face_reflected_ray, out bid_reflect, out distance_reflect, out reflect_incident_point, out reflect_vector_null);
+                if (bid_reflect != BACKGROUND_ID)
+                {
+                    //Ray pointing_ray = light_source.ComputeDiffuseLightingRay(reflect_incident_point);
+                    double null1;
+                    Triple null2, null3;
+                    int id;
+                    bool is_lit = false;
+                    foreach (ILightSource light_source in lights)
+                    {
+                        Ray pointing_ray = light_source.ComputeDiffuseLightingRay(reflect_incident_point);
+                        pointing_ray.Position = pointing_ray.Position + NORMAL_EPSILON*reflect_vector_null;
+                        get_relevant_body(pointing_ray, out id, out null1, out null2, out null3);
+                        if (id != BACKGROUND_ID)
+                        {
+                            is_lit = true;
+                            break;
+                        }
+                    }
+                    Triple body_target_color = bodies[bid_reflect].BodyOpticalProperties.BaseColor;
+                    double t = Math.Exp(-GLOBAL_DIFFUSIVE_CONST_REFLECT*distance_reflect);
+                    if (is_lit) color = t*body_target_color + (1-t)*color;
+                }*/
             }
         }
 
