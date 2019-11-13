@@ -11,6 +11,38 @@ namespace raysharp
         {
             return Math.Abs(a) < EPSILON;
         }
+        public static int[][] ComputeBoxRayCover(Ray input, double x0, double x1, double y0, double y1, double z0, double z1, int nx, int ny, int nz, double dx, double dy, double dz)
+        {
+            Triple entry_point, exit_point;
+            Triple null1;
+            double null2;
+            //need a box containment check here.
+            if (!CheckBoxIncidence(input, new double[] {x0, x1, y0, y1, z0, z1}, out entry_point, out null1, out null2)) return new int[0][];
+            bool x_impossible = Math.Abs(input.Direction.X) < 1e-10;
+            bool y_impossible = Math.Abs(input.Direction.Y) < 1e-10;
+            bool z_impossible = Math.Abs(input.Direction.Z) < 1e-10;
+            double[] extreme_dists = new double[6];
+            extreme_dists[0] = x_impossible ? double.PositiveInfinity : (x0 - entry_point.X)/input.Direction.X;
+            extreme_dists[1] = x_impossible ? double.PositiveInfinity : (x1 - entry_point.X)/input.Direction.X;
+            extreme_dists[2] = y_impossible ? double.PositiveInfinity : (y0 - entry_point.Y)/input.Direction.Y;
+            extreme_dists[3] = y_impossible ? double.PositiveInfinity : (y1 - entry_point.Y)/input.Direction.Y;
+            extreme_dists[4] = z_impossible ? double.PositiveInfinity : (z0 - entry_point.Z)/input.Direction.Z;
+            extreme_dists[5] = z_impossible ? double.PositiveInfinity : (z1 - entry_point.Z)/input.Direction.Z;
+            double min_pos_dist = double.PositiveInfinity;
+            for(int i = 0; i < 6; i++)
+            {
+                extreme_dists[i] = extreme_dists[i] < 1e-8 ? double.PositiveInfinity : extreme_dists[i];
+                min_pos_dist = (min_pos_dist > extreme_dists[i]) ? extreme_dists[i] : min_pos_dist;
+            }
+            exit_point = entry_point + min_pos_dist*input.Direction;
+
+            Utils.WriteCsv("outputdata/bounds.csv", new double[] {x0,x1,y0,y1,z0,z1});
+            Utils.WriteCsv("outputdata/entry.csv", new double[] {entry_point.X, entry_point.Y, entry_point.Z});
+            Utils.WriteCsv("outputdata/exit.csv", new double[] {exit_point.X, exit_point.Y, exit_point.Z});
+            Utils.WriteCsv("outputdata/origin.csv", new double[] {input.Position.X, input.Position.Y, input.Position.Z});
+
+            return new int[0][];
+        }
         public static bool CheckBoxIncidence(Ray r, double[] bounds, out Triple point_of_incidence, out Triple normal_vector, out double distance)
         {
             point_of_incidence = null;
@@ -135,6 +167,34 @@ namespace raysharp
             foreach(double g in contents)
             {
                 lines.Add(g.ToString());
+            }
+            File.WriteAllLines(filename, lines.ToArray());
+        }
+        public static void WriteCsv(string filename, double[,] contents)
+        {
+            List<string> lines = new List<string>();
+            for (int i = 0; i < contents.GetLength(0); i++)
+            {
+                string line = contents[i,0].ToString();
+                for (int j = 0; j < contents.GetLength(1); j++)
+                {
+                    line += ("," + contents[i,j].ToString());
+                }
+                lines.Add(line);
+            }
+            File.WriteAllLines(filename, lines.ToArray());
+        }
+        public static void WriteCsv(string filename, int[,] contents)
+        {
+            List<string> lines = new List<string>();
+            for (int i = 0; i < contents.GetLength(0); i++)
+            {
+                string line = contents[i,0].ToString();
+                for (int j = 0; j < contents.GetLength(1); j++)
+                {
+                    line += ("," + contents[i,j].ToString());
+                }
+                lines.Add(line);
             }
             File.WriteAllLines(filename, lines.ToArray());
         }

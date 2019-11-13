@@ -36,7 +36,7 @@ namespace raysharp
         private int nx, ny;
         private static bool par_rdr;
         public static bool PAR_RENDER {set {par_rdr = value;}}
-        public RayImage Render()
+        public RayImage Render(out double[,] distances, out int[,] ids)
         {
             rays = camera.GetRays();
             im = new RayImage(camera.NX, camera.NY);
@@ -52,7 +52,15 @@ namespace raysharp
                     render_single(i);
                 }
             }
+            distances = distance_field;
+            ids = bodyid_field;
             return im;
+        }
+        public RayImage Render()
+        {
+            int[,] null1;
+            double[,] null2;
+            return Render(out null2, out null1);
         }
         private void render_single(int i)
         {

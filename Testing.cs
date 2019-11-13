@@ -8,6 +8,26 @@ namespace raysharp
 {
 	public static class Testing
 	{
+		public static void TestRayCover()
+		{
+			double x0 = 0;
+			double x1 = 1;
+			double y0 = 0;
+			double y1 = 1;
+			double z0 = 0;
+			double z1 = 1;
+			int nx = 10;
+			int ny = 10;
+			int nz = 10;
+			double dx = (x1 - x0) / nx;
+			double dy = (y1 - y0) / ny;
+			double dz = (z1 - z0) / nz;
+			Triple pos = new Triple(0.5, -0.5, 0.5);
+			Triple dir = (new Triple(0.01, 1, -0.5)).Unit();
+			Ray testray = new Ray(pos, dir);
+			Console.WriteLine(testray);
+			int[][] cover = Utils.ComputeBoxRayCover(testray,x0,x1,y0,y1,z0,z1,nx,ny,nz,dx,dy,dz);
+		}
 		public static double[] RenderTeapot()
 		{
 			int nx = 1320;
@@ -66,9 +86,13 @@ namespace raysharp
 				main_scene.SceneCamera.AzimuthAngle = theta;
 				//main_scene.SceneCamera.ElevationAngle = -0.19740*Math.Sin(theta);
 				main_scene.SceneCamera.Position = pos;
+				double[,] dist;
+				int[,] id;
 				w.tic();
-				RayImage r = main_scene.Render();
+				RayImage r = main_scene.Render(out dist, out id);
 				times.Add(w.toc());
+				Utils.WriteCsv("outputdata/ids.csv", id);
+				Utils.WriteCsv("outputdata/dists.csv", dist);
 				w.Report("render " + i.ToString());
 				r.Save("frames/img" + (i).ToString().PadLeft(3, '0') + ".png");
 			}
@@ -122,8 +146,12 @@ namespace raysharp
 				//main_scene.SceneCamera.ElevationAngle = -0.19740*Math.Sin(theta);
 				main_scene.SceneCamera.Position = pos;
 				w.tic();
-				RayImage r = main_scene.Render();
+				double[,] dist;
+				int[,] id;
+				RayImage r = main_scene.Render(out dist, out id);
 				times.Add(w.toc());
+				Utils.WriteCsv("outputdata/ids.csv", id);
+				Utils.WriteCsv("outputdata/dists.csv", dist);
 				w.Report("render " + i.ToString());
 				r.Save("frames/img" + (i).ToString().PadLeft(3, '0') + ".png");
 			}

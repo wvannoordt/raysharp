@@ -126,50 +126,7 @@ namespace raysharp
             point_of_incidence = null;
             distance = -1;
 
-            /*List<int[]> cover = new List<int[]>();
-            List<double> distances = new List<double>();
-            for (int i = 0; i < x_box_count; i++)
-            {
-                for (int j = 0; j < y_box_count; j++)
-                {
-                    for (int k = 0; k < z_box_count; k++)
-                    {
-                        double dist;
-                        if (true)//check_box_incidence(i,j,k,input,out dist))
-                        {
-                            cover.Add(new int[] {i,j,k});
-                            distances.Add(1);//dist);
-                        }
-                    }
-                }
-            }
-
-            int[][] cover_arr = new int[cover.Count][];
-            double[] dist_arr = distances.ToArray();
-            for (int i = 0; i < cover.Count; i++) cover_arr[i] = cover[i];
-
-            //Utils.SortAccording<int[]>(cover_arr, dist_arr);
-            for (int i = 0; i < cover_arr.Length; i++)
-            {
-                double current_min_face_distance = double.PositiveInfinity;
-                int[] cur_idx = cover_arr[i];
-                int[] current_faces = box_lookup_facet_covers[cur_idx[0], cur_idx[1], cur_idx[2]];
-                for (int j = 0; j < 4; j++)//current_faces.Length; j++)
-                {
-                    double current_face_distance;
-                    Triple current_point_of_incidence;
-                    //if (check_face_incidence(current_faces[j], input, out current_point_of_incidence, out current_face_distance))
-                    if (check_face_incidence(j, input, out current_point_of_incidence, out current_face_distance))
-                    {
-                        if (current_face_distance < current_min_face_distance)
-                        {
-                            output = j;//current_faces[j];
-                            current_min_face_distance = current_face_distance;
-                            point_of_incidence = current_point_of_incidence;
-                        }
-                    }
-                }
-            }*/
+            int[][] ray_cover = Utils.ComputeBoxRayCover(input, xmin_global, xmax_global, ymin_global, ymax_global, zmin_global, zmax_global, x_box_count, y_box_count, z_box_count, delta_x, delta_y, delta_z);
 
             for (int j = 0; j < face_count; j++)
             {
