@@ -10,6 +10,8 @@ namespace raysharp
 	{
 		public static void TestRayCover()
 		{
+			string[] csvs = Directory.GetFiles("./outputdata/","*.csv");
+			foreach(string i in csvs) File.Delete(i);
 			double x0 = 0;
 			double x1 = 1;
 			double y0 = 0;
@@ -22,11 +24,32 @@ namespace raysharp
 			double dx = (x1 - x0) / nx;
 			double dy = (y1 - y0) / ny;
 			double dz = (z1 - z0) / nz;
-			Triple pos = new Triple(0.5, -0.5, 0.5);
-			Triple dir = (new Triple(0.01, 1, -0.5)).Unit();
+			Triple pos = new Triple(0.512, -0.51, 0.1);
+			Triple dir = (new Triple(0.1, 1, 0.4)).Unit();
 			Ray testray = new Ray(pos, dir);
-			Console.WriteLine(testray);
-			int[][] cover = Utils.ComputeBoxRayCover(testray,x0,x1,y0,y1,z0,z1,nx,ny,nz,dx,dy,dz);
+			Triple enter, exit;
+			Triple[] intersections;
+			int[][] cover = Utils.ComputeBoxRayCover(testray,x0,x1,y0,y1,z0,z1,nx,ny,nz,dx,dy,dz, out enter, out exit, out intersections);
+			double[] box_def =  new double[] {x0,x1,y0,y1,z0,z1,dx,dy,dz,(double)nx, (double)ny, (double)nz};
+			Utils.WriteCsv("outputdata/boundingbox.csv", box_def);
+			Utils.WriteCsv("outputdata/ray.csv", new double[] {testray.Position.X, testray.Position.Y, testray.Position.Z, testray.Direction.X, testray.Direction.Y, testray.Direction.Z});
+			for (int i = 0; i < cover.Length; i++)
+			{
+				int[] coords = cover[i];
+				double[] cur_box = new double[]
+				{
+					x0 + coords[0]*dx,
+					x0 + (coords[0]+1)*dx,
+					y0 + coords[1]*dy,
+					y0 + (coords[1]+1)*dy,
+					z0 + coords[2]*dz,
+					z0 + (coords[2]+1)*dz,
+				};
+				Utils.WriteCsv("outputdata/coverbox" + i.ToString().PadLeft(cover.Length.ToString().Length, '0') + ".csv", cur_box);
+			}
+			Utils.WriteCsv("outputdata/entry.csv", new double[] {enter.X, enter.Y, enter.Z});
+			Utils.WriteCsv("outputdata/exit.csv", new double[] {exit.X, exit.Y, exit.Z});
+			Utils.WriteCsv("outputdata/intersections.csv", intersections);
 		}
 		public static double[] RenderTeapot()
 		{

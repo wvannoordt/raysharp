@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace raysharp
 {
@@ -13,11 +14,23 @@ namespace raysharp
         }
         public static int[][] ComputeBoxRayCover(Ray input, double x0, double x1, double y0, double y1, double z0, double z1, int nx, int ny, int nz, double dx, double dy, double dz)
         {
+            Triple null1, null2;
+            Triple[] null3;
+            return ComputeBoxRayCover(input, x0, x1, y0, y1, z0, z1, nx, ny, nz, dx, dy, dz, out null1, out null2, out null3);
+        }
+        public static int[][] ComputeBoxRayCover(Ray input, double x0, double x1, double y0, double y1, double z0, double z1, int nx, int ny, int nz, double dx, double dy, double dz, out Triple entry, out Triple exit, out Triple[] intersection_points)
+        {
             Triple entry_point, exit_point;
             Triple null1;
             double null2;
             //need a box containment check here.
-            if (!CheckBoxIncidence(input, new double[] {x0, x1, y0, y1, z0, z1}, out entry_point, out null1, out null2)) return new int[0][];
+            if (!CheckBoxIncidence(input, new double[] {x0, x1, y0, y1, z0, z1}, out entry_point, out null1, out null2))
+            {
+                intersection_points = null;
+                entry = null;
+                exit = null;
+                return new int[0][];
+            }
             bool x_impossible = Math.Abs(input.Direction.X) < 1e-10;
             bool y_impossible = Math.Abs(input.Direction.Y) < 1e-10;
             bool z_impossible = Math.Abs(input.Direction.Z) < 1e-10;
@@ -36,12 +49,101 @@ namespace raysharp
             }
             exit_point = entry_point + min_pos_dist*input.Direction;
 
-            Utils.WriteCsv("outputdata/bounds.csv", new double[] {x0,x1,y0,y1,z0,z1});
-            Utils.WriteCsv("outputdata/entry.csv", new double[] {entry_point.X, entry_point.Y, entry_point.Z});
-            Utils.WriteCsv("outputdata/exit.csv", new double[] {exit_point.X, exit_point.Y, exit_point.Z});
-            Utils.WriteCsv("outputdata/origin.csv", new double[] {input.Position.X, input.Position.Y, input.Position.Z});
+            double[] distances_x;
+            if (!x_impossible)
+            {
+                double inverse_vec_x = 1 / input.Direction.X;
+                distances_x = new double[nx + 1];
+                for (int i = 0; i < nx + 1; i++) distances_x[i] = inverse_vec_x * ((x0 + i*dx)-entry_point.X);
+            }
+            else distances_x = new double[0];
 
-            return new int[0][];
+            double[] distances_y;
+            if (!y_impossible)
+            {
+                double inverse_vec_y = 1 / input.Direction.Y;
+                distances_y = new double[ny + 1];
+                for (int i = 0; i < ny + 1; i++) distances_y[i] = inverse_vec_y * ((y0 + i*dy)-entry_point.Y);
+            }
+            else distances_y = new double[0];
+
+            double[] distances_z;
+            if (!z_impossible)
+            {
+                double inverse_vec_z = 1 / input.Direction.Z;
+                distances_z = new double[nz + 1];
+                for (int i = 0; i < nz + 1; i++) distances_z[i] = inverse_vec_z * ((z0 + i*dz)-entry_point.Z);
+            }
+            else distances_z = new double[0];
+            List<double> all_distances_l = new List<double>();
+            List<byte> directions_l = new List<byte>();
+            foreach (double d in distances_x)
+            {
+                if (d >= -1e-8 && d <= min_pos_dist)
+                {
+                    all_distances_l.Add(d);
+                    directions_l.Add(0);
+                }
+            }
+            foreach (double d in distances_y)
+            {
+                if (d >= -1e-8 && d <= min_pos_dist)
+                {
+                    all_distances_l.Add(d);
+                    directions_l.Add(1);
+                }
+            }
+            foreach (double d in distances_z)
+            {
+                if (d >= -1e-8 && d < min_pos_dist)
+                {
+                    all_distances_l.Add(d);
+                    directions_l.Add(2);
+                }
+            }
+            double[] all_distances = all_distances_l.ToArray();
+            byte[] all_directions = directions_l.ToArray();
+
+            for (int i = 0; i < all_distances.Length; i++) Console.WriteLine(all_directions[i] + "," + all_distances[i]);
+            SortAccording<byte>(all_directions, all_distances);
+            for (int i = 0; i < all_distances.Length; i++) Console.WriteLine(all_directions[i] + "," + all_distances[i]);
+            List<int[]> output = new List<int[]>();
+            //Remove later, just for debugging.
+            List<Triple> coll_l = new List<Triple>();
+            for (int i = 0; i < all_distances.Length; i++)
+            {
+                Triple current_position = entry_point + all_distances[i]*input.Direction;
+                coll_l.Add(current_position);
+                int[] primary_coords = new int[]
+                {
+                    (int)Math.Floor((current_position.X - x0) / dx),
+                    (int)Math.Floor((current_position.Y - y0) / dy),
+                    (int)Math.Floor((current_position.Z - z0) / dz)
+                };
+                int[] delta = new int[] {0, 0, 0};
+                bool negative_direction = input.Direction[all_directions[i]] < 0;
+                delta[all_directions[i]] = Math.Sign(input.Direction[all_directions[i]]);
+                int[] secondary_coords = new int[]
+                {
+                    primary_coords[0] + delta[0],
+                    primary_coords[1] + delta[1],
+                    primary_coords[2] + delta[2]
+                };
+                if (negative_direction)
+                {
+                    //if (secondary_coords[0] >= 0 && secondary_coords[0] < nx &&secondary_coords[1] >= 0 && secondary_coords[1] < ny && secondary_coords[2] >= 0 && secondary_coords[2] < nz) output.Add(secondary_coords);
+                    if (primary_coords[0] >= 0 && primary_coords[0] < nx &&primary_coords[1] >= 0 && primary_coords[1] < ny && primary_coords[2] >= 0 && primary_coords[2] < nz) output.Add(primary_coords);
+                }
+                else
+                {
+                    if (primary_coords[0] >= 0 && primary_coords[0] < nx &&primary_coords[1] >= 0 && primary_coords[1] < ny && primary_coords[2] >= 0 && primary_coords[2] < nz) output.Add(primary_coords);
+                    //if (secondary_coords[0] >= 0 && secondary_coords[0] < nx &&secondary_coords[1] >= 0 && secondary_coords[1] < ny && secondary_coords[2] >= 0 && secondary_coords[2] < nz) output.Add(secondary_coords);
+                }
+            }
+            entry = entry_point;
+            exit = exit_point;
+            intersection_points = coll_l.ToArray();
+            return output.Distinct().ToArray();
         }
         public static bool CheckBoxIncidence(Ray r, double[] bounds, out Triple point_of_incidence, out Triple normal_vector, out double distance)
         {
@@ -184,6 +286,16 @@ namespace raysharp
             }
             File.WriteAllLines(filename, lines.ToArray());
         }
+        public static void WriteCsv(string filename, Triple[] contents)
+        {
+            List<string> lines = new List<string>();
+            for (int i = 0; i < contents.GetLength(0); i++)
+            {
+                string line = contents[i].ToCsvString();
+                lines.Add(line);
+            }
+            File.WriteAllLines(filename, lines.ToArray());
+        }
         public static void WriteCsv(string filename, int[,] contents)
         {
             List<string> lines = new List<string>();
@@ -293,11 +405,25 @@ namespace raysharp
         {
             quick_sort_acc<T>(accord, 0, arr.Length - 1, arr);
         }
+        public static void QuickSort(double[] arr)
+        {
+            quick_sort(arr, 0, arr.Length - 1);
+        }
+        private static void quick_sort(double[] arr, int left, int right)
+        {
+            if (left < right)
+            {
+                int pivot = partition(arr, left, right);
+                if (pivot > 1) quick_sort(arr, left, pivot - 1);
+                if (pivot + 1 < right) quick_sort(arr, pivot + 1, right);
+            }
+
+        }
         private static void quick_sort_acc<T>(double[] arr, int left, int right, T[] stuff)
         {
             if (left < right)
             {
-                int pivot = Partition<T>(arr, left, right, stuff);
+                int pivot = partition_acc<T>(arr, left, right, stuff);
 
                 if (pivot > 1) {
                     quick_sort_acc(arr, left, pivot - 1, stuff);
@@ -308,8 +434,24 @@ namespace raysharp
             }
 
         }
-
-        private static int Partition<T>(double[] arr, int left, int right, T[] stuff)
+        private static int partition(double[] arr, int left, int right)
+        {
+            double pivot = arr[left];
+            while (true)
+            {
+                while (arr[left] < pivot) left++;
+                while (arr[right] > pivot) right--;
+                if (left < right)
+                {
+                    if (arr[left] == arr[right]) return right;
+                    double temp = arr[left];
+                    arr[left] = arr[right];
+                    arr[right] = temp;
+                }
+                else return right;
+            }
+        }
+        private static int partition_acc<T>(double[] arr, int left, int right, T[] stuff)
         {
             double pivot = arr[left];
             while (true)
