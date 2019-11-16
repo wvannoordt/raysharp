@@ -128,18 +128,35 @@ namespace raysharp
 
             int[][] ray_cover = Utils.ComputeBoxRayCover(input, xmin_global, xmax_global, ymin_global, ymax_global, zmin_global, zmax_global, x_box_count, y_box_count, z_box_count, delta_x, delta_y, delta_z);
 
-            for (int j = 0; j < face_count; j++)
+            //Uniqueness check needs to be implemented here.
+            for (int i = 0; i < ray_cover.Length; i++)
             {
-                double current_distance;
-                Triple current_point;
-                if (check_face_incidence(j, input, out current_point, out current_distance))
+                int[] coords = ray_cover[i];
+                int[] local_faces = box_lookup_facet_covers[coords[0], coords[1], coords[2]];
+                List<double> block_local_distances = new List<double>();
+                List<int> block_local_faces = new List<int>();
+                List<Triple> block_local_collisions = new List<Triple>();
+                foreach (int face_id in local_faces)
                 {
-                    if (distance < 0 || current_distance < distance)
+                    Triple local_collision;
+                    double local_distance;
+                    if (check_face_incidence(face_id, input, out local_collision, out local_distance))
                     {
-                        output = j;
-                        distance = current_distance;
-                        point_of_incidence = current_point;
+                        block_local_distances.Add(local_distance);
+                        block_local_faces.Add(face_id);
+                        block_local_collisions.Add(local_collision);
                     }
+                }
+                if (block_local_faces.Count > 0)
+                {
+                    int[] faces_ar = block_local_faces.ToArray();
+                    double[] distances_ar = block_local_distances.ToArray();
+                    Triple[] collisions_ar = block_local_collisions.ToArray();
+                    //Console.WriteLine(faces_ar.Length + "," + distances_ar.Length + "," + collisions_ar.Length);
+                    Utils.QuickSortAccordingIntTriple(distances_ar, faces_ar, collisions_ar);
+                    point_of_incidence = collisions_ar[0];
+                    distance = distances_ar[0];
+                    return faces_ar[0];
                 }
             }
             return output;

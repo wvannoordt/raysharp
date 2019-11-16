@@ -10,13 +10,12 @@ namespace raysharp
 	{
 		public static void TestRayCover()
 		{
-			string[] csvs = Directory.GetFiles("./outputdata/","*.csv");
-			foreach(string i in csvs) File.Delete(i);
-			double x0 = 0;
+			int N = 2;
+			double x0 = -1;
 			double x1 = 1;
-			double y0 = 0;
+			double y0 = -1;
 			double y1 = 1;
-			double z0 = 0;
+			double z0 = -1;
 			double z1 = 1;
 			int nx = 10;
 			int ny = 10;
@@ -24,38 +23,62 @@ namespace raysharp
 			double dx = (x1 - x0) / nx;
 			double dy = (y1 - y0) / ny;
 			double dz = (z1 - z0) / nz;
-			Triple pos = new Triple(0.512, -0.51, 0.1);
-			Triple dir = (new Triple(0.1, 1, 0.4)).Unit();
-			Ray testray = new Ray(pos, dir);
-			Triple enter, exit;
-			Triple[] intersections;
-			int[][] cover = Utils.ComputeBoxRayCover(testray,x0,x1,y0,y1,z0,z1,nx,ny,nz,dx,dy,dz, out enter, out exit, out intersections);
-			double[] box_def =  new double[] {x0,x1,y0,y1,z0,z1,dx,dy,dz,(double)nx, (double)ny, (double)nz};
-			Utils.WriteCsv("outputdata/boundingbox.csv", box_def);
-			Utils.WriteCsv("outputdata/ray.csv", new double[] {testray.Position.X, testray.Position.Y, testray.Position.Z, testray.Direction.X, testray.Direction.Y, testray.Direction.Z});
-			for (int i = 0; i < cover.Length; i++)
+
+			for (int framenum = 0; framenum < N; framenum++)
 			{
-				int[] coords = cover[i];
-				double[] cur_box = new double[]
+				string dir_name = "ray-cover-test/data/raycover" + framenum.ToString().PadLeft(N.ToString().Length, '0');
+				Directory.CreateDirectory(dir_name);
+
+				double theta1 = 0.06*framenum;
+				double phi1 = 0.4*Math.Cos(1 + 0.02*framenum);
+
+				double theta2 = 3.141592653 + theta1;
+				double phi2 = 3.141592653 - phi1;
+
+				Triple pos1 = 4*new Triple(Math.Cos(phi1)*Math.Cos(theta1), Math.Cos(phi1)*Math.Sin(theta1), Math.Sin(phi1));
+				//Triple pos2 = new Triple(Math.Cos(phi2)*Math.Cos(theta2), Math.Cos(phi2)*Math.Sin(theta2), Math.Sin(phi2));
+				Triple pos2 = -1*pos1;
+
+
+				Random R = new Random();
+				Triple dir = new Triple(2*R.NextDouble()-1, 2*R.NextDouble()-1, 2*R.NextDouble()-1);
+
+				Ray testray = new Ray(new Triple(2*R.NextDouble()-1,2*R.NextDouble()-1,2*R.NextDouble()-1), dir);
+				Triple enter, exit;
+				Triple[] intersections;
+
+				int[][] cover = Utils.ComputeBoxRayCover(testray,x0,x1,y0,y1,z0,z1,nx,ny,nz,dx,dy,dz, out enter, out exit, out intersections);
+				double[] box_def =  new double[] {x0,x1,y0,y1,z0,z1,dx,dy,dz,(double)nx, (double)ny, (double)nz};
+				Utils.WriteCsv(dir_name + "/boundingbox.csv", box_def);
+				Utils.WriteCsv(dir_name + "/ray.csv", new double[] {testray.Position.X, testray.Position.Y, testray.Position.Z, testray.Direction.X, testray.Direction.Y, testray.Direction.Z});
+				for (int i = 0; i < cover.Length; i++)
 				{
-					x0 + coords[0]*dx,
-					x0 + (coords[0]+1)*dx,
-					y0 + coords[1]*dy,
-					y0 + (coords[1]+1)*dy,
-					z0 + coords[2]*dz,
-					z0 + (coords[2]+1)*dz,
-				};
-				Utils.WriteCsv("outputdata/coverbox" + i.ToString().PadLeft(cover.Length.ToString().Length, '0') + ".csv", cur_box);
+					int[] coords = cover[i];
+					double[] cur_box = new double[]
+					{
+						x0 + coords[0]*dx,
+						x0 + (coords[0]+1)*dx,
+						y0 + coords[1]*dy,
+						y0 + (coords[1]+1)*dy,
+						z0 + coords[2]*dz,
+						z0 + (coords[2]+1)*dz,
+					};
+					Utils.WriteCsv(dir_name + "/coverbox" + i.ToString().PadLeft(cover.Length.ToString().Length, '0') + ".csv", cur_box);
+				}
+				if (cover.Length > 0)
+				{
+					Utils.WriteCsv(dir_name + "/entry.csv", new double[] {enter.X, enter.Y, enter.Z});
+					Utils.WriteCsv(dir_name + "/exit.csv", new double[] {exit.X, exit.Y, exit.Z});
+					Utils.WriteCsv(dir_name + "/intersections.csv", intersections);
+				}
+				Info.WriteLine("Cover contains " + cover.Length + " elements.");
 			}
-			Utils.WriteCsv("outputdata/entry.csv", new double[] {enter.X, enter.Y, enter.Z});
-			Utils.WriteCsv("outputdata/exit.csv", new double[] {exit.X, exit.Y, exit.Z});
-			Utils.WriteCsv("outputdata/intersections.csv", intersections);
 		}
 		public static double[] RenderTeapot()
 		{
 			int nx = 1320;
 			int ny = 768;
-			int N = 60;
+			int N = 1;
 			double dtheta = 2*Math.PI/N;
 			Triple cube_pos = new Triple (0,0,12);
 			Background basic = new Background();
@@ -86,7 +109,7 @@ namespace raysharp
 			eq.BodyOpticalProperties.BaseColor = new Triple(0.7, 0.2, 0.2);
 			teapot.BodyOpticalProperties.BaseColor = new Triple(0.7, 0.2, 0.2);
 			teapot.BodyOpticalProperties.IsReflective = true;
-			teapot.BodyOpticalProperties.Reflectivity = 0.185;
+			teapot.BodyOpticalProperties.Reflectivity = 0.55;
 
 			Scene main_scene = new Scene(basic, c);
 			//main_scene.AddBody(ball);
@@ -114,8 +137,6 @@ namespace raysharp
 				w.tic();
 				RayImage r = main_scene.Render(out dist, out id);
 				times.Add(w.toc());
-				Utils.WriteCsv("outputdata/ids.csv", id);
-				Utils.WriteCsv("outputdata/dists.csv", dist);
 				w.Report("render " + i.ToString());
 				r.Save("frames/img" + (i).ToString().PadLeft(3, '0') + ".png");
 			}
@@ -337,7 +358,7 @@ namespace raysharp
 			double dtheta = 2*Math.PI / (N-1);
 			for (int i = 0; i < N; i++)
 			{
-				Console.WriteLine(i);
+				Info.WriteLine(i);
 				double theta = i*dtheta;
 				double height = 28 - 5*Math.Cos(theta);
 				double elev = -0.17 + 0.45*Math.Cos(theta);

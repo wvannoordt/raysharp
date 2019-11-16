@@ -24,12 +24,18 @@ namespace raysharp
             Triple null1;
             double null2;
             //need a box containment check here.
+            bool init_point_in_box = (input.Position.X < x1 && input.Position.X > x0 && input.Position.Y < y1 && input.Position.Y > y0 && input.Position.Z < z1 && input.Position.Z > z0);
             if (!CheckBoxIncidence(input, new double[] {x0, x1, y0, y1, z0, z1}, out entry_point, out null1, out null2))
             {
                 intersection_points = null;
                 entry = null;
                 exit = null;
                 return new int[0][];
+            }
+
+            if (init_point_in_box)
+            {
+                entry_point = input.Position;
             }
             bool x_impossible = Math.Abs(input.Direction.X) < 1e-10;
             bool y_impossible = Math.Abs(input.Direction.Y) < 1e-10;
@@ -48,7 +54,6 @@ namespace raysharp
                 min_pos_dist = (min_pos_dist > extreme_dists[i]) ? extreme_dists[i] : min_pos_dist;
             }
             exit_point = entry_point + min_pos_dist*input.Direction;
-
             double[] distances_x;
             if (!x_impossible)
             {
@@ -76,43 +81,29 @@ namespace raysharp
             }
             else distances_z = new double[0];
             List<double> all_distances_l = new List<double>();
-            List<byte> directions_l = new List<byte>();
+            if (init_point_in_box) all_distances_l.Add(0);
             foreach (double d in distances_x)
             {
-                if (d >= -1e-8 && d <= min_pos_dist)
-                {
-                    all_distances_l.Add(d);
-                    directions_l.Add(0);
-                }
+                if (d >= -1e-8 && d <= min_pos_dist) all_distances_l.Add(d);
             }
             foreach (double d in distances_y)
             {
-                if (d >= -1e-8 && d <= min_pos_dist)
-                {
-                    all_distances_l.Add(d);
-                    directions_l.Add(1);
-                }
+                if (d >= -1e-8 && d <= min_pos_dist) all_distances_l.Add(d);
             }
             foreach (double d in distances_z)
             {
-                if (d >= -1e-8 && d < min_pos_dist)
-                {
-                    all_distances_l.Add(d);
-                    directions_l.Add(2);
-                }
+                if (d >= -1e-8 && d <= min_pos_dist) all_distances_l.Add(d);
             }
             double[] all_distances = all_distances_l.ToArray();
-            byte[] all_directions = directions_l.ToArray();
 
-            for (int i = 0; i < all_distances.Length; i++) Console.WriteLine(all_directions[i] + "," + all_distances[i]);
-            SortAccording<byte>(all_directions, all_distances);
-            for (int i = 0; i < all_distances.Length; i++) Console.WriteLine(all_directions[i] + "," + all_distances[i]);
+            QuickSort(all_distances);
+
             List<int[]> output = new List<int[]>();
             //Remove later, just for debugging.
             List<Triple> coll_l = new List<Triple>();
-            for (int i = 0; i < all_distances.Length; i++)
+            for (int i = 0; i < all_distances.Length-1; i++)
             {
-                Triple current_position = entry_point + all_distances[i]*input.Direction;
+                Triple current_position = entry_point + 0.5*(all_distances[i] + all_distances[i+1])*input.Direction;
                 coll_l.Add(current_position);
                 int[] primary_coords = new int[]
                 {
@@ -120,25 +111,7 @@ namespace raysharp
                     (int)Math.Floor((current_position.Y - y0) / dy),
                     (int)Math.Floor((current_position.Z - z0) / dz)
                 };
-                int[] delta = new int[] {0, 0, 0};
-                bool negative_direction = input.Direction[all_directions[i]] < 0;
-                delta[all_directions[i]] = Math.Sign(input.Direction[all_directions[i]]);
-                int[] secondary_coords = new int[]
-                {
-                    primary_coords[0] + delta[0],
-                    primary_coords[1] + delta[1],
-                    primary_coords[2] + delta[2]
-                };
-                if (negative_direction)
-                {
-                    //if (secondary_coords[0] >= 0 && secondary_coords[0] < nx &&secondary_coords[1] >= 0 && secondary_coords[1] < ny && secondary_coords[2] >= 0 && secondary_coords[2] < nz) output.Add(secondary_coords);
-                    if (primary_coords[0] >= 0 && primary_coords[0] < nx &&primary_coords[1] >= 0 && primary_coords[1] < ny && primary_coords[2] >= 0 && primary_coords[2] < nz) output.Add(primary_coords);
-                }
-                else
-                {
-                    if (primary_coords[0] >= 0 && primary_coords[0] < nx &&primary_coords[1] >= 0 && primary_coords[1] < ny && primary_coords[2] >= 0 && primary_coords[2] < nz) output.Add(primary_coords);
-                    //if (secondary_coords[0] >= 0 && secondary_coords[0] < nx &&secondary_coords[1] >= 0 && secondary_coords[1] < ny && secondary_coords[2] >= 0 && secondary_coords[2] < nz) output.Add(secondary_coords);
-                }
+                if (primary_coords[0] >= 0 && primary_coords[0] < nx &&primary_coords[1] >= 0 && primary_coords[1] < ny && primary_coords[2] >= 0 && primary_coords[2] < nz) output.Add(primary_coords);
             }
             entry = entry_point;
             exit = exit_point;
@@ -400,6 +373,63 @@ namespace raysharp
                 if (x > output) output = x;
             }
             return output;
+        }
+
+        public static void QuickSortAccordingIntTriple(double[] accord, int[] a, Triple[] c)
+        {
+            quick_sort_mult_acc_i_t(accord, 0, accord.Length-1, a, c);
+        }
+        private static void quick_sort_mult_acc_i_t(double[] arr, int left, int right, int[] a, Triple[] c)
+        {
+            if (left < right)
+            {
+                int pivot = partition_mult_acc_i_t(arr, left, right, a, c);
+
+                if (pivot > 1) {
+                    quick_sort_mult_acc_i_t(arr, left, pivot - 1, a, c);
+                }
+                if (pivot + 1 < right) {
+                    quick_sort_mult_acc_i_t(arr, pivot + 1, right, a, c);
+                }
+            }
+        }
+        private static int partition_mult_acc_i_t(double[] arr, int left, int right, int[] a, Triple[] c)
+        {
+            double pivot = arr[left];
+            while (true)
+            {
+
+                while (arr[left] < pivot)
+                {
+                    left++;
+                }
+
+                while (arr[right] > pivot)
+                {
+                    right--;
+                }
+
+                if (left < right)
+                {
+                    if (arr[left] == arr[right]) return right;
+
+                    double temp = arr[left];
+                    arr[left] = arr[right];
+                    arr[right] = temp;
+
+                    int temp1 = a[left];
+                    a[left] = a[right];
+                    a[right] = temp1;
+
+                    Triple temp3 = c[left];
+                    c[left] = c[right];
+                    c[right] = temp3;
+                }
+                else
+                {
+                    return right;
+                }
+            }
         }
         public static void SortAccording<T>(T[] arr, double[] accord)
         {
