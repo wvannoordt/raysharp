@@ -30,19 +30,20 @@ namespace raysharp
         }
 
         private volatile Ray[,] rays;
-        private volatile double[,] distance_field;
+        private volatile double[,] distance_field, times_field;
         private volatile int[,] bodyid_field;
         private volatile RayImage im;
         private int nx, ny;
         private static bool par_rdr;
         public static bool PAR_RENDER {set {par_rdr = value;}}
-        public RayImage Render(out double[,] distances, out int[,] ids)
+        public RayImage Render(out double[,] distances, out int[,] ids, out double[,] px_times)
         {
             rays = camera.GetRays();
             im = new RayImage(camera.NX, camera.NY);
             nx = camera.NX;
             ny = camera.NY;
             distance_field = new double[nx,ny];
+            times_field = new double[nx,ny];
             bodyid_field = new int[nx, ny];
             if (par_rdr) Parallel.For(0, nx,render_single );
             else
@@ -54,13 +55,14 @@ namespace raysharp
             }
             distances = distance_field;
             ids = bodyid_field;
+            px_times = times_field;
             return im;
         }
         public RayImage Render()
         {
             int[,] null1;
-            double[,] null2;
-            return Render(out null2, out null1);
+            double[,] null2, null3;
+            return Render(out null2, out null1, out null3);
         }
         private void render_single(int i)
         {
@@ -68,7 +70,7 @@ namespace raysharp
             for (int j = 0; j < ny; j++)
             {
                 //depth = 1 is a temporary fix!!
-                Triple color = TraceRay(rays[i,j], 0, 2, out bodyid_field[i,j], out distance_field[i,j]);
+                Triple color = TraceRay(rays[i,j], 2, out bodyid_field[i,j], out distance_field[i,j], out times_field[i,j]);
                 im.SetPixelXY(i,j,color);
             }
         }
@@ -81,7 +83,15 @@ namespace raysharp
         {
             lights.Add(light);
         }
-        public Triple TraceRay(Ray r, int current_depth, int max_depth, out int body_id, out double distance)
+        public Triple TraceRay(Ray r, int max_depth, out int body_id, out double distance, out double time)
+        {
+            CustomStopWatch t = new CustomStopWatch();
+            t.tic();
+            Triple output = trace_ray_recursive(r, 0, max_depth, out body_id, out distance);
+            time = t.toc();
+            return output;
+        }
+        private Triple trace_ray_recursive(Ray r, int current_depth, int max_depth, out int body_id, out double distance)
         {
             if (current_depth > max_depth)
             {
@@ -118,14 +128,13 @@ namespace raysharp
                 double null2;
                 if (bodies[relevant_body].BodyOpticalProperties.IsReflective)
                 {
-                    return (1-bodies[relevant_body].BodyOpticalProperties.Reflectivity)*color + bodies[relevant_body].BodyOpticalProperties.Reflectivity*TraceRay(r, current_depth + 1, max_depth, out null1, out null2);
+                    return (1-bodies[relevant_body].BodyOpticalProperties.Reflectivity)*color + bodies[relevant_body].BodyOpticalProperties.Reflectivity*trace_ray_recursive(r, current_depth + 1, max_depth, out null1, out null2);
                 }
                 else
                 {
                     return color;
                 }
             }
-
         }
         private void adjust_for_diffuse_lighting(Triple collision_point, Triple normal_vector_in, Ray reflected_ray, ref Triple color, double body_reflection_parameter)
         {

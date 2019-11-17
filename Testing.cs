@@ -96,7 +96,7 @@ namespace raysharp
 			Camera c = new Camera(pos, elev, 0, nx, ny, 0.9);
 			Sphere ball = new Sphere(cube_pos, 3);
 
-			Stl teapot_stl = new Stl("stl/bulb.stl");
+			Stl teapot_stl = new Stl("stl/frog.stl");
 
 			FacetBody teapot = teapot_stl.ToFacetBody(cube_pos + new Triple(5, 1.5, 0));
 
@@ -132,13 +132,16 @@ namespace raysharp
 				main_scene.SceneCamera.AzimuthAngle = theta;
 				//main_scene.SceneCamera.ElevationAngle = -0.19740*Math.Sin(theta);
 				main_scene.SceneCamera.Position = pos;
-				double[,] dist;
+				double[,] dist, times_d;
 				int[,] id;
 				w.tic();
-				RayImage r = main_scene.Render(out dist, out id);
+				RayImage r = main_scene.Render(out dist, out id, out times_d);
 				times.Add(w.toc());
 				w.Report("render " + i.ToString());
 				r.Save("frames/img" + (i).ToString().PadLeft(3, '0') + ".png");
+				Utils.WriteCsv("outputdata/ids.csv", id);
+				Utils.WriteCsv("outputdata/dists.csv", dist);
+				Utils.WriteCsv("outputdata/pxtimes.csv", times_d);
 			}
 			return times.ToArray();
 		}
@@ -190,9 +193,9 @@ namespace raysharp
 				//main_scene.SceneCamera.ElevationAngle = -0.19740*Math.Sin(theta);
 				main_scene.SceneCamera.Position = pos;
 				w.tic();
-				double[,] dist;
+				double[,] dist, ts;
 				int[,] id;
-				RayImage r = main_scene.Render(out dist, out id);
+				RayImage r = main_scene.Render(out dist, out id, out ts);
 				times.Add(w.toc());
 				Utils.WriteCsv("outputdata/ids.csv", id);
 				Utils.WriteCsv("outputdata/dists.csv", dist);

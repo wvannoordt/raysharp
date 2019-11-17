@@ -52,6 +52,9 @@ Need to figure out how to compute ray covers in a sensible fashion. Will probabl
 where it does not. The cover should be sorted in the direction of the ray and then each box should be checked in that order. If an incidence is found, then no more bounding boxes are checked.
 the minimal-distance incidence is taken as the relevant one.
 
+There are some numerical errors related to computing triangular face incidence. Need to look at pixel time distributions to see where the expense is going. Start thinking about what can be done
+in post-processing stages? Probably clouds, distance blurs, etc.
+
 Preliminary trace:
 	get base color
 	diffuse lighting viewing surface (gives the "solar" effect?)
