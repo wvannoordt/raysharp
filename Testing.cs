@@ -8,6 +8,32 @@ namespace raysharp
 {
 	public static class Testing
 	{
+		public static void RdrTimeMaps()
+		{
+			int nx = 800;
+			int ny = 600;
+			double cam_x = -20;
+			double cam_y = 0;
+			double cam_z = 30;
+			Camera c = new Camera(new Triple(cam_x, cam_y, cam_z), 0, 0, nx, ny, 0.9);
+			Background basic = new Background();
+			GlobalLightSource light = new GlobalLightSource(new Triple(1, 2, -4));
+			Scene main_scene = new Scene(basic, c);
+
+			Stl stl_subject = new Stl("stl/cat.stl");
+			FacetBody subject = stl_subject.ToFacetBody(new Triple(0, 0, 25));
+			RectangularPrism floor = new RectangularPrism(new Triple(0, 0, 23), 190, 190, 3);
+
+			main_scene.AddBody(floor);
+			main_scene.AddBody(subject);
+			main_scene.AddLight(light);
+
+			double[,] dist, ts;
+			int[,] id;
+			RayImage r = main_scene.Render(out dist, out id, out ts);
+
+			r.Save("frames/testing.png");
+		}
 		public static void TestRayCover()
 		{
 			int N = 2;
