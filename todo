@@ -55,6 +55,10 @@ the minimal-distance incidence is taken as the relevant one.
 There are some numerical errors related to computing triangular face incidence. Need to look at pixel time distributions to see where the expense is going. Start thinking about what can be done
 in post-processing stages? Probably clouds, distance blurs, etc.
 
+https://imgur.com/a/5RnAT7w -> this image actually demonstrates an interesting problem. It shows that the data structure (3D grid) is not necessaryily a good way to optimize searches. It really should be done in a way that groups large 
+volumes of empty boxes so as to minimize computation time. This will take a lot of thinking...
+
+
 Preliminary trace:
 	get base color
 	diffuse lighting viewing surface (gives the "solar" effect?)
