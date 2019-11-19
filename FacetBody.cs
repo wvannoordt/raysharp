@@ -28,6 +28,8 @@ namespace raysharp
         private const int N2 = 10;
         private const int N3 = 11;
 
+        private const bool SLOWFACEID = false;
+
         private Triple anchor;
         public Triple RotationReference {get;}
         public double XminGlobal {get{return xmin_global;}}
@@ -126,40 +128,64 @@ namespace raysharp
             point_of_incidence = null;
             distance = -1;
 
-            int[][] ray_cover = Utils.ComputeBoxRayCover(input, xmin_global, xmax_global, ymin_global, ymax_global, zmin_global, zmax_global, x_box_count, y_box_count, z_box_count, delta_x, delta_y, delta_z);
-
-            //Uniqueness check needs to be implemented here.
-            for (int i = 0; i < ray_cover.Length; i++)
+            if (SLOWFACEID)
             {
-                int[] coords = ray_cover[i];
-                int[] local_faces = box_lookup_facet_covers[coords[0], coords[1], coords[2]];
-                List<double> block_local_distances = new List<double>();
-                List<int> block_local_faces = new List<int>();
-                List<Triple> block_local_collisions = new List<Triple>();
-                foreach (int face_id in local_faces)
+                int output_id = -1;
+                double mindist = double.PositiveInfinity;
+                for (int i = 0; i < face_count; i++)
                 {
-                    Triple local_collision;
-                    double local_distance;
-                    if (check_face_incidence(face_id, input, out local_collision, out local_distance))
+                    double dist_local;
+                    Triple out_collision;
+                    if (check_face_incidence(i, input, out out_collision, out dist_local))
                     {
-                        block_local_distances.Add(local_distance);
-                        block_local_faces.Add(face_id);
-                        block_local_collisions.Add(local_collision);
+                        if (dist_local < mindist)
+                        {
+                            output_id = i;
+                            mindist = dist_local;
+                            point_of_incidence = out_collision;
+                        }
                     }
                 }
-                if (block_local_faces.Count > 0)
-                {
-                    int[] faces_ar = block_local_faces.ToArray();
-                    double[] distances_ar = block_local_distances.ToArray();
-                    Triple[] collisions_ar = block_local_collisions.ToArray();
-                    //Console.WriteLine(faces_ar.Length + "," + distances_ar.Length + "," + collisions_ar.Length);
-                    Utils.QuickSortAccordingIntTriple(distances_ar, faces_ar, collisions_ar);
-                    point_of_incidence = collisions_ar[0];
-                    distance = distances_ar[0];
-                    return faces_ar[0];
-                }
+                distance = mindist;
+                return output_id;
             }
-            return output;
+            else
+            {
+                int[][] ray_cover = Utils.ComputeBoxRayCover(input, xmin_global, xmax_global, ymin_global, ymax_global, zmin_global, zmax_global, x_box_count, y_box_count, z_box_count, delta_x, delta_y, delta_z);
+
+                //Uniqueness check needs to be implemented here.
+                for (int i = 0; i < ray_cover.Length; i++)
+                {
+                    int[] coords = ray_cover[i];
+                    int[] local_faces = box_lookup_facet_covers[coords[0], coords[1], coords[2]];
+                    List<double> block_local_distances = new List<double>();
+                    List<int> block_local_faces = new List<int>();
+                    List<Triple> block_local_collisions = new List<Triple>();
+                    foreach (int face_id in local_faces)
+                    {
+                        Triple local_collision;
+                        double local_distance;
+                        if (check_face_incidence(face_id, input, out local_collision, out local_distance))
+                        {
+                            block_local_distances.Add(local_distance);
+                            block_local_faces.Add(face_id);
+                            block_local_collisions.Add(local_collision);
+                        }
+                    }
+                    if (block_local_faces.Count > 0)
+                    {
+                        int[] faces_ar = block_local_faces.ToArray();
+                        double[] distances_ar = block_local_distances.ToArray();
+                        Triple[] collisions_ar = block_local_collisions.ToArray();
+                        //Console.WriteLine(faces_ar.Length + "," + distances_ar.Length + "," + collisions_ar.Length);
+                        Utils.QuickSortAccordingIntTriple(distances_ar, faces_ar, collisions_ar);
+                        point_of_incidence = collisions_ar[0];
+                        distance = distances_ar[0];
+                        return faces_ar[0];
+                    }
+                }
+                return output;
+            }
         }
         private bool check_face_incidence(int i, Ray input, out Triple point_of_incidence, out double distance)
         {
