@@ -119,7 +119,7 @@ namespace raysharp
 
 			main_scene.AddLight(light);
 
-			Scene.PAR_RENDER = true;
+			Scene.PAR_RENDER = false;
 
 			CustomStopWatch w = new CustomStopWatch();
 			for (int i = 0; i < N; i++)
