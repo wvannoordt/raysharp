@@ -2,6 +2,8 @@ using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.IO;
 
 namespace raysharp
 {
@@ -77,8 +79,122 @@ namespace raysharp
         }
         public void Save(string filename)
         {
+            if (!Directory.Exists(Path.GetDirectoryName(filename))) Info.Kill(this, " could not find part of \"" + filename + "\".");
             Image imout = (Image)bmp;
             imout.Save(filename);
+        }
+        public static RayImage ArrayRange(double[,] imagedata, ColorGradient c)
+        {
+            int ni = imagedata.GetLength(0);
+            int nj = imagedata.GetLength(1);
+            RayImage output = new RayImage(ni,nj);
+            double minn = double.PositiveInfinity;
+            double maxx = double.NegativeInfinity;
+            for (int i = 0; i < ni; i++)
+            {
+                for (int j = 0; j < nj; j++)
+                {
+                    maxx = (imagedata[i,j] > maxx) ? imagedata[i,j] : maxx;
+                    minn = (imagedata[i,j] < minn) ? imagedata[i,j] : minn;
+                }
+            }
+            for (int i = 0; i < ni; i++)
+            {
+                for (int j = 0; j < nj; j++)
+                {
+                    output.SetPixel(i,j,c.GetColor(imagedata[i,j], minn, maxx));
+                }
+            }
+            return output;
+        }
+        public static RayImage ArrayRangeXY(double[,] imagedata, ColorGradient c)
+        {
+            int ni = imagedata.GetLength(0);
+            int nj = imagedata.GetLength(1);
+            RayImage output = new RayImage(ni,nj);
+            double minn = double.PositiveInfinity;
+            double maxx = double.NegativeInfinity;
+            for (int i = 0; i < ni; i++)
+            {
+                for (int j = 0; j < nj; j++)
+                {
+                    maxx = (imagedata[i,j] > maxx) ? imagedata[i,j] : maxx;
+                    minn = (imagedata[i,j] < minn) ? imagedata[i,j] : minn;
+                }
+            }
+            for (int i = 0; i < ni; i++)
+            {
+                for (int j = 0; j < nj; j++)
+                {
+                    Triple col = c.GetColor(imagedata[i,j], minn, maxx);
+                    output.SetPixelXY(i,j,col);
+                }
+            }
+            return output;
+        }
+        public static RayImage ArrayLogRangeXY(double[,] imagedata_in, ColorGradient c)
+        {
+            int ni = imagedata_in.GetLength(0);
+            int nj = imagedata_in.GetLength(1);
+            double[,] imagedata = new double[ni,nj];
+            for (int i = 0; i < ni; i++)
+            {
+                for (int j = 0; j < nj; j++)
+                {
+                    imagedata[i,j] = Math.Log10(Math.Abs(imagedata_in[i,j]) + 1e-10);
+                }
+            }
+            RayImage output = new RayImage(ni,nj);
+            double minn = double.PositiveInfinity;
+            double maxx = double.NegativeInfinity;
+            for (int i = 0; i < ni; i++)
+            {
+                for (int j = 0; j < nj; j++)
+                {
+                    maxx = (imagedata[i,j] > maxx) ? imagedata[i,j] : maxx;
+                    minn = (imagedata[i,j] < minn) ? imagedata[i,j] : minn;
+                }
+            }
+            for (int i = 0; i < ni; i++)
+            {
+                for (int j = 0; j < nj; j++)
+                {
+                    output.SetPixelXY(i,j,c.GetColor(imagedata[i,j], minn, maxx));
+                }
+            }
+            return output;
+        }
+        public static RayImage ArrayLogRange(double[,] imagedata_in, ColorGradient c)
+        {
+            int ni = imagedata_in.GetLength(0);
+            int nj = imagedata_in.GetLength(1);
+            double[,] imagedata = new double[ni,nj];
+            for (int i = 0; i < ni; i++)
+            {
+                for (int j = 0; j < nj; j++)
+                {
+                    imagedata[i,j] = Math.Log10(Math.Abs(imagedata_in[i,j]) + 1e-10);
+                }
+            }
+            RayImage output = new RayImage(ni,nj);
+            double minn = double.PositiveInfinity;
+            double maxx = double.NegativeInfinity;
+            for (int i = 0; i < ni; i++)
+            {
+                for (int j = 0; j < nj; j++)
+                {
+                    maxx = (imagedata[i,j] > maxx) ? imagedata[i,j] : maxx;
+                    minn = (imagedata[i,j] < minn) ? imagedata[i,j] : minn;
+                }
+            }
+            for (int i = 0; i < ni; i++)
+            {
+                for (int j = 0; j < nj; j++)
+                {
+                    output.SetPixel(i,j,c.GetColor(imagedata[i,j], minn, maxx));
+                }
+            }
+            return output;
         }
     }
 }
