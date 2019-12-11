@@ -10,7 +10,7 @@ namespace raysharp
 	{
 		public static void Main(string[] args)
 		{
-			Testing.RdrTimeMaps();
+			Testing.DestroyComputer();
 		}
 	}
 }

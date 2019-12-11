@@ -12,6 +12,7 @@ namespace raysharp
 		private CustomStopWatch watch;
 		private const double EPSILON = 1e-15;
 		private const double INFLATION_CONST = 1e-3;
+		private const int MAX_BOXES = 200;
 
 		//Needs testing to determine "break-even" point... might be system-specific.
 		private static bool par_compute_cover = false;
@@ -454,6 +455,10 @@ namespace raysharp
 			y_box_count = (int)Math.Ceiling((bounds[YMAX] - bounds[YMIN]) / avg_delta_y);
 			z_box_count = (int)Math.Ceiling((bounds[ZMAX] - bounds[ZMIN]) / avg_delta_z);
 
+			x_box_count = Utils.Min(x_box_count, MAX_BOXES);
+			y_box_count = Utils.Min(y_box_count, MAX_BOXES);
+			z_box_count = Utils.Min(z_box_count, MAX_BOXES);
+
 			delta_x = (bounds[XMAX] - bounds[XMIN]) / x_box_count;
 			delta_y = (bounds[YMAX] - bounds[YMIN]) / y_box_count;
 			delta_z = (bounds[ZMAX] - bounds[ZMIN]) / z_box_count;
@@ -594,6 +599,10 @@ namespace raysharp
 				x_box_count = (int)Math.Ceiling((bounds[XMAX] - bounds[XMIN]) / avg_delta_x);
 				y_box_count = (int)Math.Ceiling((bounds[YMAX] - bounds[YMIN]) / avg_delta_y);
 				z_box_count = (int)Math.Ceiling((bounds[ZMAX] - bounds[ZMIN]) / avg_delta_z);
+
+				x_box_count = Utils.Min(x_box_count, MAX_BOXES);
+				y_box_count = Utils.Min(y_box_count, MAX_BOXES);
+				z_box_count = Utils.Min(z_box_count, MAX_BOXES);
 
 				delta_x = (bounds[XMAX] - bounds[XMIN]) / x_box_count;
 				delta_y = (bounds[YMAX] - bounds[YMIN]) / y_box_count;

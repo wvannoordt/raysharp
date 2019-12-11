@@ -8,6 +8,43 @@ namespace raysharp
 {
 	public static class Testing
 	{
+		public static void DestroyComputer()
+		{
+			int nx = 800;
+			int ny = 600;
+			double radius = 31;
+			double cam_z = 30;
+			double theta = 0.5*Math.PI;
+			Camera c = new Camera(new Triple(-radius*Math.Cos(-theta), radius*Math.Sin(-theta), cam_z), 0, 0, nx, ny, 0.9);
+			c.AzimuthAngle = theta;
+			Background basic = new Background();
+			GlobalLightSource light = new GlobalLightSource(new Triple(1, 2, -4));
+			Scene main_scene = new Scene(basic, c);
+
+			Stl stl_subject = new Stl("stl/sae-geom.stl");
+			FacetBody subject = stl_subject.ToFacetBody(new Triple(0, 0, 25));
+			RectangularPrism floor = new RectangularPrism(new Triple(0, 0, 21.3), 190, 190, 0.3);
+
+			subject.BodyOpticalProperties.BaseColor = new Triple(0.2, 0.2, 0.9);
+			subject.BodyOpticalProperties.IsReflective = true;
+			subject.BodyOpticalProperties.Reflectivity = 0.21;
+
+			//main_scene.AddBody(floor);
+			main_scene.AddBody(subject);
+			main_scene.AddLight(light);
+
+			double[,] dist, ts;
+			int[,] id;
+			Info.WriteLine("Rendering...");
+			RayImage picture = main_scene.Render(out dist, out id, out ts);
+			RayImage dist_picture = RayImage.ArrayLogRangeXY(dist, ColorGradient.Jedi());
+			RayImage t_picture = RayImage.ArrayLogRangeXY(ts, ColorGradient.Jedi());
+			Info.WriteLine("Done.");
+
+			picture.Save("outputdata/car.png");
+			dist_picture.Save("outputdata/cardists.png");
+			t_picture.Save("outputdata/cartimes.png");
+		}
 		public static void RdrTimeMaps()
 		{
 			int nx = 800;
