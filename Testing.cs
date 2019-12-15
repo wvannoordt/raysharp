@@ -10,10 +10,10 @@ namespace raysharp
 	{
 		public static void DestroyComputer()
 		{
-			int nx = 800;
-			int ny = 600;
-			double radius = 31;
-			double cam_z = 30;
+			int nx = 1950;
+			int ny = 1000;
+			double radius = 25;
+			double cam_z = 26;
 			double theta = 0.5*Math.PI;
 			Camera c = new Camera(new Triple(-radius*Math.Cos(-theta), radius*Math.Sin(-theta), cam_z), 0, 0, nx, ny, 0.9);
 			c.AzimuthAngle = theta;
@@ -21,15 +21,17 @@ namespace raysharp
 			GlobalLightSource light = new GlobalLightSource(new Triple(1, 2, -4));
 			Scene main_scene = new Scene(basic, c);
 
-			Stl stl_subject = new Stl("stl/sae-geom.stl");
+			Info.WriteLine("Importing...");
+			Stl stl_subject = new Stl("stl/car-b.stl", true);
+			Info.WriteLine("Done importing.");
 			FacetBody subject = stl_subject.ToFacetBody(new Triple(0, 0, 25));
-			RectangularPrism floor = new RectangularPrism(new Triple(0, 0, 21.3), 190, 190, 0.3);
+			RectangularPrism floor = new RectangularPrism(new Triple(0, 0, subject.ZminGlobal - 0.15), 190, 190, 0.3);
 
 			subject.BodyOpticalProperties.BaseColor = new Triple(0.2, 0.2, 0.9);
 			subject.BodyOpticalProperties.IsReflective = true;
 			subject.BodyOpticalProperties.Reflectivity = 0.21;
 
-			//main_scene.AddBody(floor);
+			main_scene.AddBody(floor);
 			main_scene.AddBody(subject);
 			main_scene.AddLight(light);
 
@@ -41,9 +43,9 @@ namespace raysharp
 			RayImage t_picture = RayImage.ArrayLogRangeXY(ts, ColorGradient.Jedi());
 			Info.WriteLine("Done.");
 
-			picture.Save("outputdata/car.png");
-			dist_picture.Save("outputdata/cardists.png");
-			t_picture.Save("outputdata/cartimes.png");
+			picture.Save("cfdstuff/car.png");
+			dist_picture.Save("cfdstuff/cardists.png");
+			t_picture.Save("cfdstuff/cartimes.png");
 		}
 		public static void RdrTimeMaps()
 		{

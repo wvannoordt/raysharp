@@ -14,6 +14,8 @@ namespace raysharp
 		private const double INFLATION_CONST = 1e-3;
 		private const int MAX_BOXES = 200;
 
+		private double normal_scale_factor;
+
 		//Needs testing to determine "break-even" point... might be system-specific.
 		private static bool par_compute_cover = false;
 		private static bool par_compute_adj = false;
@@ -82,8 +84,10 @@ namespace raysharp
 		public double Zmin {get {return bounds[ZMIN];}}
 		public double Zmax {get {return bounds[ZMAX];}}
 
-		public Stl(string filename)
+		public Stl(string filename, bool _rev_norms = false)
 		{
+			normal_scale_factor = 1.0;
+			if (_rev_norms) normal_scale_factor = -1.0;
 			watch = new CustomStopWatch("MAIN");
 			bounds = new double[]
 			{
@@ -389,9 +393,9 @@ namespace raysharp
 			//Parallelize later on?
 			for (int i = header_offset; i < all_bytes.Length; i+=offset)
 			{
-				data[current_real_idx, N1] = (double)System.BitConverter.ToSingle(all_bytes, i);
-				data[current_real_idx, N2] = (double)System.BitConverter.ToSingle(all_bytes, i + 4);
-				data[current_real_idx, N3] = (double)System.BitConverter.ToSingle(all_bytes, i + 8);
+				data[current_real_idx, N1] = (double)System.BitConverter.ToSingle(all_bytes, i) * normal_scale_factor;
+				data[current_real_idx, N2] = (double)System.BitConverter.ToSingle(all_bytes, i + 4) * normal_scale_factor;
+				data[current_real_idx, N3] = (double)System.BitConverter.ToSingle(all_bytes, i + 8) * normal_scale_factor;
 				data[current_real_idx, X1] = (double)System.BitConverter.ToSingle(all_bytes, i + 12);
 				data[current_real_idx, Y1] = (double)System.BitConverter.ToSingle(all_bytes, i + 16);
 				data[current_real_idx, Z1] = (double)System.BitConverter.ToSingle(all_bytes, i + 20);
@@ -538,7 +542,7 @@ namespace raysharp
 						reader.ReadLine();
 						line_count++;
 
-						data_stream.Add(new double[] {x1, y1, z1, x2, y2, z2, x3, y3, z3, n1, n2, n3});
+						data_stream.Add(new double[] {x1, y1, z1, x2, y2, z2, x3, y3, z3, normal_scale_factor*n1, normal_scale_factor*n2, normal_scale_factor*n3});
 
 						mean_x = mean_x + x1;
 						mean_x = mean_x + x2;

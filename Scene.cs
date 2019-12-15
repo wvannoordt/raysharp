@@ -9,7 +9,7 @@ namespace raysharp
 {
     public class Scene
     {
-        private const double NORMAL_EPSILON = 1e-6;
+        private const double NORMAL_EPSILON = 1e-3;
         private static double GLOBAL_DIFFUSIVE_CONST_NORMAL = 0.06;
         private static double GLOBAL_DIFFUSIVE_CONST_REFLECT = 0.0006;
         private Background backdrop;

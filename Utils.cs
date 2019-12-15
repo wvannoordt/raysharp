@@ -7,7 +7,7 @@ namespace raysharp
 {
     public static class Utils
     {
-        private static double EPSILON =1e-8;
+        private static double EPSILON =1e-6;
         public static bool CheckMachineZero(double a)
         {
             return Math.Abs(a) < EPSILON;
