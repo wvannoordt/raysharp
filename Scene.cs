@@ -20,6 +20,7 @@ namespace raysharp
         private Camera camera;
         public Background Backdrop {get {return backdrop;} set {backdrop = value;}}
         public Camera SceneCamera {get {return camera;} set {camera=value;}}
+        public bool DoShadows {get {return do_shadows;} set {do_shadows = value;}}
         public Scene(Background _backdrop, Camera _camera)
         {
             backdrop = _backdrop;
@@ -27,6 +28,7 @@ namespace raysharp
             lights = new List<ILightSource>();
             bodies = new List<IRenderableBody>();
             par_rdr = true;
+            do_shadows = false;
         }
 
         private volatile Ray[,] rays;
@@ -36,6 +38,7 @@ namespace raysharp
         private int nx, ny;
         private static bool par_rdr;
         public static bool PAR_RENDER {set {par_rdr = value;}}
+        private bool do_shadows;
         public RayImage Render(out double[,] distances, out int[,] ids, out double[,] px_times)
         {
             rays = camera.GetRays();
@@ -148,7 +151,7 @@ namespace raysharp
                 //Need the small normal correction otherwise machine error gives spottiness.
                 Ray pointing_ray = light_source.ComputeDiffuseLightingRay(collision_point + NORMAL_EPSILON*normal_vector_in);
                 get_relevant_body(pointing_ray, out bid, out dist_null, out point_null, out normal_vector_null);
-                if (bid == BACKGROUND_ID)
+                if (bid == BACKGROUND_ID || !do_shadows)
                 {
                     shadow = false;
                     double t = body_reflection_parameter*light_source.GetPercentLightReception(pointing_ray);

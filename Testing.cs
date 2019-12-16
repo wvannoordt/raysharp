@@ -18,20 +18,23 @@ namespace raysharp
 			Camera c = new Camera(new Triple(-radius*Math.Cos(-theta), radius*Math.Sin(-theta), cam_z), 0, 0, nx, ny, 0.9);
 			c.AzimuthAngle = theta;
 			Background basic = new Background();
+			basic.HasFloor = false;
+			basic.SkyColor = new Triple(1, 1, 1);
 			GlobalLightSource light = new GlobalLightSource(new Triple(1, 2, -4));
 			Scene main_scene = new Scene(basic, c);
+			main_scene.DoShadows = true;
 
 			Info.WriteLine("Importing...");
-			Stl stl_subject = new Stl("stl/car-b.stl", true);
+			Stl stl_subject = new Stl("stl/car-a.stl", true);
 			Info.WriteLine("Done importing.");
 			FacetBody subject = stl_subject.ToFacetBody(new Triple(0, 0, 25));
 			RectangularPrism floor = new RectangularPrism(new Triple(0, 0, subject.ZminGlobal - 0.15), 190, 190, 0.3);
 
-			subject.BodyOpticalProperties.BaseColor = new Triple(0.2, 0.2, 0.9);
-			subject.BodyOpticalProperties.IsReflective = true;
+			subject.BodyOpticalProperties.BaseColor = new Triple(0.5, 0.5, 0.5);
+			subject.BodyOpticalProperties.IsReflective = false;
 			subject.BodyOpticalProperties.Reflectivity = 0.21;
 
-			main_scene.AddBody(floor);
+			//main_scene.AddBody(floor);
 			main_scene.AddBody(subject);
 			main_scene.AddLight(light);
 

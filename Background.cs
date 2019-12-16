@@ -9,6 +9,8 @@ namespace raysharp
     public class Background
     {
         private Triple sky_color, floor_color, altfloor_color, horizon_color;
+        public Triple SkyColor {get {return sky_color;} set {sky_color = value;}}
+        public Triple FloorColor {get {return floor_color;} set {floor_color = value;}}
         private bool disable_anti_aliasing;
         private double floor_height, floor_checker_length, lightness;
         private const double HORIZON_THRESH = 0.004;
@@ -67,6 +69,12 @@ namespace raysharp
         {
             Triple loc_floor_color = floor_color;
             double dglob = -1;
+            if (!has_floor)
+            {
+                reflected = null;
+                distance_out = -1;
+                return sky_color;
+            }
             if (has_floor && r.V3 <= -0.5*HORIZON_THRESH)
             {
                 Triple new_direc = new Triple(r.V1, r.V2, -r.V3);
