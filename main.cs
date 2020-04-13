@@ -10,7 +10,8 @@ namespace raysharp
 	{
 		public static void Main(string[] args)
 		{
-			Testing.DestroyComputer();
+			
+			Testing.Liberty();
 		}
 	}
 }
